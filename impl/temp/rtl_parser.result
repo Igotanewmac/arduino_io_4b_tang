@@ -1,5 +1,13 @@
 [
  {
+  "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
+  "InstLine" : 10,
+  "InstName" : "Gowin_SP_16k",
+  "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
+  "ModuleLine" : 10,
+  "ModuleName" : "Gowin_SP_16k"
+ },
+ {
   "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
   "InstLine" : 6,
   "InstName" : "top",
@@ -9,23 +17,23 @@
   "SubInsts" : [
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 41,
+    "InstLine" : 48,
     "InstName" : "blockmem_src",
-    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
+    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_dpb/gowin_dpb_16k.v",
     "ModuleLine" : 10,
-    "ModuleName" : "Gowin_SP_16k"
+    "ModuleName" : "Gowin_DPB_16k"
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 60,
+    "InstLine" : 81,
     "InstName" : "blockmem_key",
-    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
+    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_dpb/gowin_dpb_16k.v",
     "ModuleLine" : 10,
-    "ModuleName" : "Gowin_SP_16k"
+    "ModuleName" : "Gowin_DPB_16k"
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 86,
+    "InstLine" : 117,
     "InstName" : "blockmem_cmd",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_dpb/gowin_dpb_16k.v",
     "ModuleLine" : 10,
@@ -33,15 +41,15 @@
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 113,
+    "InstLine" : 150,
     "InstName" : "blockmem_dst",
-    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
+    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_dpb/gowin_dpb_16k.v",
     "ModuleLine" : 10,
-    "ModuleName" : "Gowin_SP_16k"
+    "ModuleName" : "Gowin_DPB_16k"
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 127,
+    "InstLine" : 171,
     "InstName" : "myarduino_io",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/arduino_io.v",
     "ModuleLine" : 9,
@@ -49,7 +57,7 @@
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 179,
+    "InstLine" : 223,
     "InstName" : "myprocessorcore",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/processor_core.v",
     "ModuleLine" : 13,

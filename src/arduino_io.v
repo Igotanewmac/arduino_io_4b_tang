@@ -259,8 +259,8 @@ module arduino_io (
                             mem_dst_wre <= 1'b0;
                             case (reg_shiftregister_input[15:14])
                                 2'b00 : arduino_datain <= mem_src_dout;
-                                2'b10 : arduino_datain <= mem_key_dout;
-                                2'b01 : arduino_datain <= mem_cmd_dout;
+                                2'b01 : arduino_datain <= mem_key_dout;
+                                2'b10 : arduino_datain <= mem_cmd_dout;
                                 2'b11 : arduino_datain <= mem_dst_dout;
                             endcase
                             reg_statemachine_commit <= 2'b10;

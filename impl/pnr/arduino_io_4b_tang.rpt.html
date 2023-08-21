@@ -83,7 +83,7 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 </tr>
 <tr>
 <td class="label">Created Time</td>
-<td>Mon Aug 21 10:20:23 2023
+<td>Mon Aug 21 13:33:06 2023
 </td>
 </tr>
 <tr>
@@ -97,24 +97,24 @@ table.detail_table th.label {  min-width: 8%; width: 8%; }
 <tr>
 <td class="label">Place & Route Process</td>
 <td>Running placement:
-   Placement Phase 0: CPU time = 0h 0m 0.04s, Elapsed time = 0h 0m 0.041s
-   Placement Phase 1: CPU time = 0h 0m 0.245s, Elapsed time = 0h 0m 0.244s
-   Placement Phase 2: CPU time = 0h 0m 0.021s, Elapsed time = 0h 0m 0.021s
-   Placement Phase 3: CPU time = 0h 0m 0.838s, Elapsed time = 0h 0m 0.838s
+   Placement Phase 0: CPU time = 0h 0m 0.068s, Elapsed time = 0h 0m 0.067s
+   Placement Phase 1: CPU time = 0h 0m 0.25s, Elapsed time = 0h 0m 0.246s
+   Placement Phase 2: CPU time = 0h 0m 0.063s, Elapsed time = 0h 0m 0.064s
+   Placement Phase 3: CPU time = 0h 0m 0.862s, Elapsed time = 0h 0m 0.864s
    Total Placement: CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
 Running routing:
-   Routing Phase 0: CPU time = 0h 0m 0.001s, Elapsed time = 0h 0m 0s
-   Routing Phase 1: CPU time = 0h 0m 0.124s, Elapsed time = 0h 0m 0.124s
-   Routing Phase 2: CPU time = 0h 0m 0.341s, Elapsed time = 0h 0m 0.342s
+   Routing Phase 0: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
+   Routing Phase 1: CPU time = 0h 0m 0.125s, Elapsed time = 0h 0m 0.129s
+   Routing Phase 2: CPU time = 0h 0m 0.532s, Elapsed time = 0h 0m 0.533s
    Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-   Total Routing: CPU time = 0h 0m 0.466s, Elapsed time = 0h 0m 0.466s
+   Total Routing: CPU time = 0h 0m 0.657s, Elapsed time = 0h 0m 0.662s
 Generate output files:
    CPU time = 0h 0m 3s, Elapsed time = 0h 0m 3s
 </td>
 </tr>
 <tr>
 <td class="label">Total Time and Memory Usage</td>
-<td>CPU time = 0h 0m 4s, Elapsed time = 0h 0m 4s, Peak memory usage = 321MB</td>
+<td>CPU time = 0h 0m 5s, Elapsed time = 0h 0m 5s, Peak memory usage = 321MB</td>
 </tr>
 </table>
 <br/>
@@ -129,12 +129,12 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">Logic</td>
-<td>127/20736</td>
-<td><1%</td>
+<td>330/20736</td>
+<td>2%</td>
 </tr>
 <tr>
 <td class="label">&nbsp &nbsp --LUT,ALU,ROM16</td>
-<td>127(127 LUT, 0 ALU, 0 ROM16)</td>
+<td>330(330 LUT, 0 ALU, 0 ROM16)</td>
 <td>-</td>
 </tr>
 <tr>
@@ -144,7 +144,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">Register</td>
-<td>185/15750</td>
+<td>301/15750</td>
 <td>2%</td>
 </tr>
 <tr>
@@ -154,7 +154,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">&nbsp &nbsp --Logic Register as FF</td>
-<td>167/15552</td>
+<td>283/15552</td>
 <td>2%</td>
 </tr>
 <tr>
@@ -169,8 +169,8 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">CLS</td>
-<td>151/10368</td>
-<td>2%</td>
+<td>295/10368</td>
+<td>3%</td>
 </tr>
 <tr>
 <td class="label">I/O Port</td>
@@ -204,7 +204,7 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">BSRAM</td>
-<td>24 SP<br/>8 DPB<br/></td>
+<td>32 DPB<br/></td>
 <td>70%</td>
 </tr>
 <tr>
@@ -300,11 +300,11 @@ Generate output files:
 </tr>
 <tr>
 <td class="label">PRIMARY</td>
-<td>6/8(75%)</td>
+<td>8/8(100%)</td>
 </tr>
 <tr>
 <td class="label">LW</td>
-<td>1/8(13%)</td>
+<td>2/8(25%)</td>
 </tr>
 <tr>
 <td class="label">GCLK_PIN</td>
@@ -337,32 +337,47 @@ Generate output files:
 <td> TR TL BR BL</td>
 </tr>
 <tr>
-<td class="label">wire_mem_src_clk</td>
+<td class="label">wire_mem_key_clka</td>
 <td>PRIMARY</td>
 <td> TR TL BR BL</td>
 </tr>
 <tr>
-<td class="label">wire_mem_key_clk</td>
+<td class="label">wire_mem_cmd_clka</td>
 <td>PRIMARY</td>
 <td> TR TL BL</td>
 </tr>
 <tr>
-<td class="label">wire_mem_cmd_clka</td>
-<td>PRIMARY</td>
-<td> TR TL BR</td>
-</tr>
-<tr>
-<td class="label">wire_mem_dst_clk</td>
+<td class="label">wire_mem_dst_clka</td>
 <td>PRIMARY</td>
 <td> TR TL</td>
 </tr>
 <tr>
 <td class="label">wire_mem_cmd_clkb</td>
 <td>PRIMARY</td>
-<td> TR TL BR</td>
+<td> TR TL BL</td>
+</tr>
+<tr>
+<td class="label">wire_mem_src_clkb</td>
+<td>PRIMARY</td>
+<td> TR TL BR BL</td>
+</tr>
+<tr>
+<td class="label">wire_mem_dst_clkb</td>
+<td>PRIMARY</td>
+<td> TR TL</td>
+</tr>
+<tr>
+<td class="label">wire_mem_key_clkb</td>
+<td>PRIMARY</td>
+<td> TR TL BR BL</td>
 </tr>
 <tr>
 <td class="label">arduino_reset_d</td>
+<td>LW</td>
+<td> -</td>
+</tr>
+<tr>
+<td class="label">wire_mem_src_clka</td>
 <td>LW</td>
 <td> -</td>
 </tr>
