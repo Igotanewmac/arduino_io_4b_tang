@@ -9,7 +9,7 @@
   "SubInsts" : [
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 35,
+    "InstLine" : 41,
     "InstName" : "blockmem_src",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
     "ModuleLine" : 10,
@@ -17,7 +17,7 @@
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 54,
+    "InstLine" : 60,
     "InstName" : "blockmem_key",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
     "ModuleLine" : 10,
@@ -25,15 +25,15 @@
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 73,
+    "InstLine" : 86,
     "InstName" : "blockmem_cmd",
-    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
+    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_dpb/gowin_dpb_16k.v",
     "ModuleLine" : 10,
-    "ModuleName" : "Gowin_SP_16k"
+    "ModuleName" : "Gowin_DPB_16k"
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 92,
+    "InstLine" : 113,
     "InstName" : "blockmem_dst",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/gowin_sp/gowin_sp_16k.v",
     "ModuleLine" : 10,
@@ -41,11 +41,19 @@
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 106,
+    "InstLine" : 127,
     "InstName" : "myarduino_io",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/arduino_io.v",
     "ModuleLine" : 9,
     "ModuleName" : "arduino_io"
+   },
+   {
+    "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
+    "InstLine" : 179,
+    "InstName" : "myprocessorcore",
+    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/processor_core.v",
+    "ModuleLine" : 13,
+    "ModuleName" : "processor_core"
    }
   ]
  }
