@@ -16,7 +16,6 @@ module top (
     input wire arduino_commit,
     input wire arduino_reset
 
-    
 );
     
 
