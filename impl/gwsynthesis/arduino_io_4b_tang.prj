@@ -5,17 +5,17 @@
     <Device id="GW2AR-18C" package="QFN88" speed="8" partNumber="GW2AR-LV18QN88C8/I7"/>
     <FileList>
         <File path="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\arduino_io.v" type="verilog"/>
-        <File path="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\gowin_sp\gowin_sp_16k.v" type="verilog"/>
-        <File path="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\top.v" type="verilog"/>
         <File path="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\gowin_dpb\gowin_dpb_16k.v" type="verilog"/>
+        <File path="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\gowin_sp\gowin_sp_16k.v" type="verilog"/>
         <File path="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v" type="verilog"/>
+        <File path="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\top.v" type="verilog"/>
     </FileList>
     <OptionList>
         <Option type="disable_insert_pad" value="0"/>
         <Option type="dsp_balance" value="0"/>
         <Option type="looplimit" value="2000"/>
         <Option type="output_file" value="C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\impl\gwsynthesis\arduino_io_4b_tang.vg"/>
-        <Option type="print_all_synthesis_warning" value="0"/>
+        <Option type="print_all_synthesis_warning" value="1"/>
         <Option type="ram_rw_check" value="1"/>
         <Option type="top_module" value="top"/>
         <Option type="verilog_language" value="verilog-2001"/>
