@@ -12,27 +12,27 @@
   <Part Number>: GW2AR-LV18QN88C8/I7
   <Device>: GW2AR-18
   <Device Version>: C
-  <Created Time>:Tue Aug 22 05:51:36 2023
+  <Created Time>:Tue Aug 22 08:41:15 2023
 
 
 2. PnR Details
 
   Running placement:
-    Placement Phase 0: CPU time = 0h 0m 0.182s, Elapsed time = 0h 0m 0.183s
-    Placement Phase 1: CPU time = 0h 0m 0.263s, Elapsed time = 0h 0m 0.263s
-    Placement Phase 2: CPU time = 0h 0m 0.328s, Elapsed time = 0h 0m 0.328s
-    Placement Phase 3: CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
-    Total Placement: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
+    Placement Phase 0: CPU time = 0h 0m 0.356s, Elapsed time = 0h 0m 0.356s
+    Placement Phase 1: CPU time = 0h 0m 0.384s, Elapsed time = 0h 0m 0.384s
+    Placement Phase 2: CPU time = 0h 0m 0.939s, Elapsed time = 0h 0m 0.939s
+    Placement Phase 3: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
+    Total Placement: CPU time = 0h 0m 4s, Elapsed time = 0h 0m 4s
  Running routing:
-    Routing Phase 0: CPU time = 0h 0m 0.001s, Elapsed time = 0h 0m 0.001s
-    Routing Phase 1: CPU time = 0h 0m 0.151s, Elapsed time = 0h 0m 0.152s
-    Routing Phase 2: CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
+    Routing Phase 0: CPU time = 0h 0m 0.001s, Elapsed time = 0h 0m 0.002s
+    Routing Phase 1: CPU time = 0h 0m 0.182s, Elapsed time = 0h 0m 0.182s
+    Routing Phase 2: CPU time = 0h 0m 2s, Elapsed time = 0h 0m 2s
     Routing Phase 3: CPU time = 0h 0m 0s, Elapsed time = 0h 0m 0s
-    Total Routing: CPU time = 0h 0m 1s, Elapsed time = 0h 0m 1s
+    Total Routing: CPU time = 0h 0m 3s, Elapsed time = 0h 0m 3s
  Generate output files:
     CPU time = 0h 0m 3s, Elapsed time = 0h 0m 3s
 
- Total Time and Memory Usage: CPU time = 0h 0m 6s, Elapsed time = 0h 0m 6s, Peak memory usage = 326MB
+ Total Time and Memory Usage: CPU time = 0h 0m 9s, Elapsed time = 0h 0m 9s, Peak memory usage = 343MB
 
 
 3. Resource Usage Summary
@@ -40,15 +40,15 @@
   ----------------------------------------------------------
   Resources                   | Usage
   ----------------------------------------------------------
-  Logic                       | 1174/20736  6%
-    --LUT,ALU,ROM16           | 1174(1174 LUT, 0 ALU, 0 ROM16)
+  Logic                       | 3696/20736  18%
+    --LUT,ALU,ROM16           | 3696(3696 LUT, 0 ALU, 0 ROM16)
     --SSRAM(RAM16)            | 0
-  Register                    | 941/15750  6%
+  Register                    | 944/15750  6%
     --Logic Register as Latch | 0/15552  0%
-    --Logic Register as FF    | 923/15552  6%
+    --Logic Register as FF    | 926/15552  6%
     --I/O Register as Latch   | 0/198  0%
     --I/O Register as FF      | 18/198  10%
-  CLS                         | 1107/10368  11%
+  CLS                         | 2077/10368  21%
   I/O Port                    | 23
   I/O Buf                     | 23
     --Input Buf               | 14
@@ -106,12 +106,12 @@
   Signal         | Global Clock   | Location
   -------------------------------------------
   sysclk_d       | PRIMARY        |  TR TL BR BL
-  wire_mem_src_clka| PRIMARY        |  TR TL BR BL
-  wire_mem_key_clka| PRIMARY        |  TR TL BR
-  wire_mem_cmd_clka| PRIMARY        |  TR TL
+  wire_mem_src_clka| PRIMARY        |  TR TL
+  wire_mem_key_clka| PRIMARY        |  TR TL BR BL
+  wire_mem_cmd_clka| PRIMARY        |  TL BL
   wire_mem_dst_clka| PRIMARY        |  TR TL
-  wire_mem_cmd_clkb| PRIMARY        |  TR TL
-  wire_mem_src_clkb| PRIMARY        |  TR TL BR BL
+  wire_mem_cmd_clkb| PRIMARY        |  TL BL
+  wire_mem_src_clkb| PRIMARY        |  TR TL
   arduino_reset_d| LW             |  -
   wire_mem_dst_clkb| LW             |  -
   wire_mem_key_clkb| LW             |  -

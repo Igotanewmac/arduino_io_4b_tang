@@ -128,7 +128,7 @@ module processor_core (
     reg [7:0] usr_bank_select;
 
     // register selection register
-    reg [15:0] usr_register_select;
+    reg [31:0] usr_register_select;
 
 
 
@@ -453,6 +453,7 @@ module processor_core (
 
                                 // increment program counter
                                 8'h00 : begin
+                                    usr_register_select[31:16] <= usr_register_select[15:0];
                                     reg_programcounter <= reg_programcounter + 1;
                                     reg_statemachine_command <= 8'h01;
                                 end
@@ -970,7 +971,221 @@ module processor_core (
 
 
 
+                        // math operations
+
+                        // 0x30 increment register immedeate
+
+                        // 0x34 decrement register immedeate
+
+                        // 0x38 add A to B into C
+
+                        // 0x40 sub A to B into C
+
+
+
+
+
+
+
+                        // 0x30 increment register immedeate
+                        8'h30 : begin
+                            case (reg_statemachine_command)
+                                
+                                // load byte into cpu_data_0
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+                                
+                                // increment the right register
+                                8'h04 : begin
+                                    case ( cpu_data_0 )
+                                        8'b00000000 : usr_data_0 <= usr_data_0 + 1;
+                                        8'b00000001 : usr_data_1 <= usr_data_1 + 1;
+                                        8'b00000010 : usr_data_2 <= usr_data_2 + 1;
+                                        8'b00000011 : usr_data_3 <= usr_data_3 + 1;
+                                        8'b00000100 : usr_data_4 <= usr_data_4 + 1;
+                                        8'b00000101 : usr_data_5 <= usr_data_5 + 1;
+                                        8'b00000110 : usr_data_6 <= usr_data_6 + 1;
+                                        8'b00000111 : usr_data_7 <= usr_data_7 + 1;
+                                        8'b00001000 : usr_data_8 <= usr_data_8 + 1;
+                                        8'b00001001 : usr_data_9 <= usr_data_9 + 1;
+                                        8'b00001010 : usr_data_A <= usr_data_A + 1;
+                                        8'b00001011 : usr_data_B <= usr_data_B + 1;
+                                        8'b00001100 : usr_data_C <= usr_data_C + 1;
+                                        8'b00001101 : usr_data_D <= usr_data_D + 1;
+                                        8'b00001110 : usr_data_E <= usr_data_E + 1;
+                                        8'b00001111 : usr_data_F <= usr_data_F + 1;
+                                        8'b10000000 : usr_wideptr_0 <= usr_wideptr_0 + 1;
+                                        8'b10000001 : usr_wideptr_1 <= usr_wideptr_1 + 1;
+                                        8'b10000010 : usr_wideptr_2 <= usr_wideptr_2 + 1;
+                                        8'b10000011 : usr_wideptr_3 <= usr_wideptr_3 + 1;
+                                        8'b10000100 : usr_wideptr_4 <= usr_wideptr_4 + 1;
+                                        8'b10000101 : usr_wideptr_5 <= usr_wideptr_5 + 1;
+                                        8'b10000110 : usr_wideptr_6 <= usr_wideptr_6 + 1;
+                                        8'b10000111 : usr_wideptr_7 <= usr_wideptr_7 + 1;
+                                        8'b10001000 : usr_wideptr_8 <= usr_wideptr_8 + 1;
+                                        8'b10001001 : usr_wideptr_9 <= usr_wideptr_9 + 1;
+                                        8'b10001010 : usr_wideptr_A <= usr_wideptr_A + 1;
+                                        8'b10001011 : usr_wideptr_B <= usr_wideptr_B + 1;
+                                        8'b10001100 : usr_wideptr_C <= usr_wideptr_C + 1;
+                                        8'b10001101 : usr_wideptr_D <= usr_wideptr_D + 1;
+                                        8'b10001110 : usr_wideptr_E <= usr_wideptr_E + 1;
+                                        8'b10001111 : usr_wideptr_F <= usr_wideptr_F + 1;
+                                        8'b00100000 : usr_address_0 <= usr_address_0 + 1;
+                                        8'b00100001 : usr_address_1 <= usr_address_1 + 1;
+                                        8'b00100010 : usr_address_2 <= usr_address_2 + 1;
+                                        8'b00100011 : usr_address_3 <= usr_address_3 + 1;
+                                        8'b00100100 : usr_address_4 <= usr_address_4 + 1;
+                                        8'b00100101 : usr_address_5 <= usr_address_5 + 1;
+                                        8'b00100110 : usr_address_6 <= usr_address_6 + 1;
+                                        8'b00100111 : usr_address_7 <= usr_address_7 + 1;
+                                        8'b00101000 : usr_address_8 <= usr_address_8 + 1;
+                                        8'b00101001 : usr_address_9 <= usr_address_9 + 1;
+                                        8'b00101010 : usr_address_A <= usr_address_A + 1;
+                                        8'b00101011 : usr_address_B <= usr_address_B + 1;
+                                        8'b00101100 : usr_address_C <= usr_address_C + 1;
+                                        8'b00101101 : usr_address_D <= usr_address_D + 1;
+                                        8'b00101110 : usr_address_E <= usr_address_E + 1;
+                                        8'b00101111 : usr_address_F <= usr_address_F + 1;
+                                    endcase
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+                                
+
+                            endcase
+                        end
+
+                        // 0x34 decrement register immedeate
+                        8'h34 : begin
+                            case (reg_statemachine_command)
+                                
+                                // load byte into cpu_data_0
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+                                
+                                // increment the right register
+                                8'h04 : begin
+                                    case ( cpu_data_0 ) 
+                                        8'b00000000 : usr_data_0 <= usr_data_0 - 1;
+                                        8'b00000001 : usr_data_1 <= usr_data_1 - 1;
+                                        8'b00000010 : usr_data_2 <= usr_data_2 - 1;
+                                        8'b00000011 : usr_data_3 <= usr_data_3 - 1;
+                                        8'b00000100 : usr_data_4 <= usr_data_4 - 1;
+                                        8'b00000101 : usr_data_5 <= usr_data_5 - 1;
+                                        8'b00000110 : usr_data_6 <= usr_data_6 - 1;
+                                        8'b00000111 : usr_data_7 <= usr_data_7 - 1;
+                                        8'b00001000 : usr_data_8 <= usr_data_8 - 1;
+                                        8'b00001001 : usr_data_9 <= usr_data_9 - 1;
+                                        8'b00001010 : usr_data_A <= usr_data_A - 1;
+                                        8'b00001011 : usr_data_B <= usr_data_B - 1;
+                                        8'b00001100 : usr_data_C <= usr_data_C - 1;
+                                        8'b00001101 : usr_data_D <= usr_data_D - 1;
+                                        8'b00001110 : usr_data_E <= usr_data_E - 1;
+                                        8'b00001111 : usr_data_F <= usr_data_F - 1;
+                                        8'b10000000 : usr_wideptr_0 <= usr_wideptr_0 - 1;
+                                        8'b10000001 : usr_wideptr_1 <= usr_wideptr_1 - 1;
+                                        8'b10000010 : usr_wideptr_2 <= usr_wideptr_2 - 1;
+                                        8'b10000011 : usr_wideptr_3 <= usr_wideptr_3 - 1;
+                                        8'b10000100 : usr_wideptr_4 <= usr_wideptr_4 - 1;
+                                        8'b10000101 : usr_wideptr_5 <= usr_wideptr_5 - 1;
+                                        8'b10000110 : usr_wideptr_6 <= usr_wideptr_6 - 1;
+                                        8'b10000111 : usr_wideptr_7 <= usr_wideptr_7 - 1;
+                                        8'b10001000 : usr_wideptr_8 <= usr_wideptr_8 - 1;
+                                        8'b10001001 : usr_wideptr_9 <= usr_wideptr_9 - 1;
+                                        8'b10001010 : usr_wideptr_A <= usr_wideptr_A - 1;
+                                        8'b10001011 : usr_wideptr_B <= usr_wideptr_B - 1;
+                                        8'b10001100 : usr_wideptr_C <= usr_wideptr_C - 1;
+                                        8'b10001101 : usr_wideptr_D <= usr_wideptr_D - 1;
+                                        8'b10001110 : usr_wideptr_E <= usr_wideptr_E - 1;
+                                        8'b10001111 : usr_wideptr_F <= usr_wideptr_F - 1;
+                                        8'b00100000 : usr_address_0 <= usr_address_0 - 1;
+                                        8'b00100001 : usr_address_1 <= usr_address_1 - 1;
+                                        8'b00100010 : usr_address_2 <= usr_address_2 - 1;
+                                        8'b00100011 : usr_address_3 <= usr_address_3 - 1;
+                                        8'b00100100 : usr_address_4 <= usr_address_4 - 1;
+                                        8'b00100101 : usr_address_5 <= usr_address_5 - 1;
+                                        8'b00100110 : usr_address_6 <= usr_address_6 - 1;
+                                        8'b00100111 : usr_address_7 <= usr_address_7 - 1;
+                                        8'b00101000 : usr_address_8 <= usr_address_8 - 1;
+                                        8'b00101001 : usr_address_9 <= usr_address_9 - 1;
+                                        8'b00101010 : usr_address_A <= usr_address_A - 1;
+                                        8'b00101011 : usr_address_B <= usr_address_B - 1;
+                                        8'b00101100 : usr_address_C <= usr_address_C - 1;
+                                        8'b00101101 : usr_address_D <= usr_address_D - 1;
+                                        8'b00101110 : usr_address_E <= usr_address_E - 1;
+                                        8'b00101111 : usr_address_F <= usr_address_F - 1;
+                                    endcase
+                                    
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+                                
+
+                            endcase
+                        end
+
+
+
+
+                        // 0x38 add A to B into C
+
+                        // 0x40 sub A to B into C
+
+
+
+
+
+
+
+
+                        // program flow operations
+
+                        // 0x50 unconditional jump immedeate
+                        // 0x51 unconditional jump to addressptr
+
+                        // 0x54 conditional jump immedeate if register is zero
+                        // 0x54 conditional jump to addressptr if register is zero
                         
+                        // 0x58 conditional jump immedeate if register is equal to register
+                        // 0x58 conditional jump to addressptr if register is equal to register
+                        
+
+
+                        
+
+
 
                         
 
