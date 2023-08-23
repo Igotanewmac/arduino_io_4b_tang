@@ -1163,6 +1163,15 @@ module processor_core (
 
                         // 0x40 sub A to B into C
 
+                        
+                        
+                        
+                        // 0x42 and A to B into C
+
+                        // 0x44 or A to B into C
+
+                        // 0x46 not A into B
+
 
 
 
@@ -1173,9 +1182,190 @@ module processor_core (
                         // program flow operations
 
                         // 0x50 unconditional jump immedeate
+                        8'h50 : begin
+                            case (reg_statemachine_command)
+                                // load high byte into cpu_address_0
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_address_0[13:8] <= mem_cmd_dout[5:0];
+                                    reg_statemachine_command <= 8'h04;
+                                end
+
+                                // load low byte into cpu_address_0
+                                8'h04 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+                                8'h05 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    mem_cmd_ce <= 1'b0;
+                                    mem_cmd_oce <= 1'b0;
+                                    cpu_address_0[7:0] <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h08;
+                                end
+
+                                // copy cpu_address_0 into programcounter
+                                8'h08 : begin
+                                    reg_programcounter <= cpu_address_0;
+                                    // jump back to start of program loop to avoid program counter increment
+                                    reg_statemachine_program <= 8'h01;
+                                end
+                            endcase
+                        end
+
                         // 0x51 unconditional jump to addressptr
 
+                        
+                        
                         // 0x54 conditional jump immedeate if register is zero
+                        8'h54 : begin
+                            case (reg_statemachine_command)
+
+                                // load register select into cpu_data_0
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+
+                                // load high byte of jmp address into cpu_address_0
+                                8'h04 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+                                8'h05 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_address_0[13:8] <= mem_cmd_dout[5:0];
+                                    reg_statemachine_command <= 8'h08;
+                                end
+
+                                
+                                // load low byte of jmp address into cpu_address_0
+                                8'h08 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h09;
+                                end
+                                8'h09 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h0A;
+                                end
+                                8'h0A : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h0B;
+                                end
+                                8'h0B : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_address_0[7:0] <= mem_cmd_dout[7:0];
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h0C;
+                                end
+
+
+
+                                // check if register is zero into cpu_data_1
+                                8'h0C : begin
+                                    case (cpu_data_0)
+                                        8'b00000000 : if ( usr_data_0 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00000001 : if ( usr_data_1 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00000010 : if ( usr_data_2 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00000011 : if ( usr_data_3 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00000100 : if ( usr_data_4 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00000101 : if ( usr_data_5 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00000110 : if ( usr_data_6 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00000111 : if ( usr_data_7 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001000 : if ( usr_data_8 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001001 : if ( usr_data_9 == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001010 : if ( usr_data_A == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001011 : if ( usr_data_B == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001100 : if ( usr_data_C == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001101 : if ( usr_data_D == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001110 : if ( usr_data_E == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00001111 : if ( usr_data_F == 8'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000000 : if ( usr_wideptr_0 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000001 : if ( usr_wideptr_1 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000010 : if ( usr_wideptr_2 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000011 : if ( usr_wideptr_3 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000100 : if ( usr_wideptr_4 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000101 : if ( usr_wideptr_5 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000110 : if ( usr_wideptr_6 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10000111 : if ( usr_wideptr_7 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001000 : if ( usr_wideptr_8 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001001 : if ( usr_wideptr_9 == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001010 : if ( usr_wideptr_A == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001011 : if ( usr_wideptr_B == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001100 : if ( usr_wideptr_C == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001101 : if ( usr_wideptr_D == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001110 : if ( usr_wideptr_E == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b10001111 : if ( usr_wideptr_F == 16'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100000 : if ( usr_address_0 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100001 : if ( usr_address_1 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100010 : if ( usr_address_2 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100011 : if ( usr_address_3 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100100 : if ( usr_address_4 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100101 : if ( usr_address_5 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100110 : if ( usr_address_6 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00100111 : if ( usr_address_7 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101000 : if ( usr_address_8 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101001 : if ( usr_address_9 == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101010 : if ( usr_address_A == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101011 : if ( usr_address_B == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101100 : if ( usr_address_C == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101101 : if ( usr_address_D == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101110 : if ( usr_address_E == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        8'b00101111 : if ( usr_address_F == 14'd0 ) reg_programcounter <= cpu_address_0;
+                                        
+                                    endcase
+                                    reg_statemachine_program <= 8'h01;
+                                end
+
+                            endcase
+                        end
+
+
                         // 0x54 conditional jump to addressptr if register is zero
                         
                         // 0x58 conditional jump immedeate if register is equal to register

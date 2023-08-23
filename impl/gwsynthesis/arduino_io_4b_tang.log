@@ -114,7 +114,13 @@ WARN  (EX3791) : Expression size 32 truncated to fit in target size 14("C:\Users
 WARN  (EX3791) : Expression size 32 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1147)
 WARN  (EX3791) : Expression size 32 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1148)
 WARN  (EX3791) : Expression size 32 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1149)
-WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1203)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1189)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1210)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1248)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1269)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1289)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1303)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1393)
 NOTE  (EX0101) : Current top module is "top"
 [5%] Running netlist conversion ...
 Running device independent optimization ...
