@@ -263,7 +263,7 @@ Examples:
 
 
 
-0x54 jmp fwd rel
+0x54 jmp bkw rel
 
     0x02 = jmp immed
 

@@ -1169,17 +1169,728 @@ module processor_core (
 
 
                         // 0x38 add C = A + B
+                        8'h38 : begin
+                            case (reg_statemachine_command)
+                                
+                                // imcrement program counter
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+
+                                // load rsel A into cpu_data_0
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+
+                                // increment program counter
+                                8'h04 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+
+                                // load rsel B intp cpu_data_1
+                                8'h05 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_1 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h08;
+                                end
+
+                                // increment program counter
+                                8'h08 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h09;
+                                end
+
+                                // load rsel C into cpu_data_2
+                                8'h09 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h0A;
+                                end
+                                8'h0A : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h0B;
+                                end
+                                8'h0B : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_2 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h0C;
+                                end
+
+                                // load operand A into cpu_data_3
+                                8'h0C : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : cpu_data_3 <= usr_data_0;
+                                        4'b0001 : cpu_data_3 <= usr_data_1;
+                                        4'b0010 : cpu_data_3 <= usr_data_2;
+                                        4'b0011 : cpu_data_3 <= usr_data_3;
+                                        4'b0100 : cpu_data_3 <= usr_data_4;
+                                        4'b0101 : cpu_data_3 <= usr_data_5;
+                                        4'b0110 : cpu_data_3 <= usr_data_6;
+                                        4'b0111 : cpu_data_3 <= usr_data_7;
+                                        4'b1000 : cpu_data_3 <= usr_data_8;
+                                        4'b1001 : cpu_data_3 <= usr_data_9;
+                                        4'b1010 : cpu_data_3 <= usr_data_A;
+                                        4'b1011 : cpu_data_3 <= usr_data_B;
+                                        4'b1100 : cpu_data_3 <= usr_data_C;
+                                        4'b1101 : cpu_data_3 <= usr_data_D;
+                                        4'b1110 : cpu_data_3 <= usr_data_E;
+                                        4'b1111 : cpu_data_3 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0D;
+                                end
+
+                                // load operand B into cpu_data_4
+                                8'h0D : begin
+                                    case (cpu_data_1[3:0])
+                                        4'b0000 : cpu_data_4 <= usr_data_0;
+                                        4'b0001 : cpu_data_4 <= usr_data_1;
+                                        4'b0010 : cpu_data_4 <= usr_data_2;
+                                        4'b0011 : cpu_data_4 <= usr_data_3;
+                                        4'b0100 : cpu_data_4 <= usr_data_4;
+                                        4'b0101 : cpu_data_4 <= usr_data_5;
+                                        4'b0110 : cpu_data_4 <= usr_data_6;
+                                        4'b0111 : cpu_data_4 <= usr_data_7;
+                                        4'b1000 : cpu_data_4 <= usr_data_8;
+                                        4'b1001 : cpu_data_4 <= usr_data_9;
+                                        4'b1010 : cpu_data_4 <= usr_data_A;
+                                        4'b1011 : cpu_data_4 <= usr_data_B;
+                                        4'b1100 : cpu_data_4 <= usr_data_C;
+                                        4'b1101 : cpu_data_4 <= usr_data_D;
+                                        4'b1110 : cpu_data_4 <= usr_data_E;
+                                        4'b1111 : cpu_data_4 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0E;
+                                end
+
+                                // cpu_data_5 = cpu_data_3 + cpu_data_4
+                                8'h0E : begin
+                                    cpu_data_5 <= cpu_data_3 + cpu_data_4;
+                                    reg_statemachine_command <= 8'h0F;
+                                end
+
+                                // copy cpu_data_5 into rsel C
+                                8'h0F : begin
+                                    case (cpu_data_2[3:0])
+                                        4'b0000 : usr_data_0 <= cpu_data_5;
+                                        4'b0001 : usr_data_1 <= cpu_data_5;
+                                        4'b0010 : usr_data_2 <= cpu_data_5;
+                                        4'b0011 : usr_data_3 <= cpu_data_5;
+                                        4'b0100 : usr_data_4 <= cpu_data_5;
+                                        4'b0101 : usr_data_5 <= cpu_data_5;
+                                        4'b0110 : usr_data_6 <= cpu_data_5;
+                                        4'b0111 : usr_data_7 <= cpu_data_5;
+                                        4'b1000 : usr_data_8 <= cpu_data_5;
+                                        4'b1001 : usr_data_9 <= cpu_data_5;
+                                        4'b1010 : usr_data_A <= cpu_data_5;
+                                        4'b1011 : usr_data_B <= cpu_data_5;
+                                        4'b1100 : usr_data_C <= cpu_data_5;
+                                        4'b1101 : usr_data_D <= cpu_data_5;
+                                        4'b1110 : usr_data_E <= cpu_data_5;
+                                        4'b1111 : usr_data_F <= cpu_data_5;
+                                    endcase
+                                    reg_statemachine_command <= 8'h10;
+                                end
+
+                                // finish
+                                8'h10 : begin
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+
+                            endcase
+                        end
 
                         // 0x40 sub c = A - B
+                        8'h40 : begin
+                            case (reg_statemachine_command)
+                                
+                                // imcrement program counter
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
 
+                                // load rsel A into cpu_data_0
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+
+                                // increment program counter
+                                8'h04 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+
+                                // load rsel B intp cpu_data_1
+                                8'h05 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_1 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h08;
+                                end
+
+                                // increment program counter
+                                8'h08 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h09;
+                                end
+
+                                // load rsel C into cpu_data_2
+                                8'h09 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h0A;
+                                end
+                                8'h0A : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h0B;
+                                end
+                                8'h0B : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_2 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h0C;
+                                end
+
+                                // load operand A into cpu_data_3
+                                8'h0C : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : cpu_data_3 <= usr_data_0;
+                                        4'b0001 : cpu_data_3 <= usr_data_1;
+                                        4'b0010 : cpu_data_3 <= usr_data_2;
+                                        4'b0011 : cpu_data_3 <= usr_data_3;
+                                        4'b0100 : cpu_data_3 <= usr_data_4;
+                                        4'b0101 : cpu_data_3 <= usr_data_5;
+                                        4'b0110 : cpu_data_3 <= usr_data_6;
+                                        4'b0111 : cpu_data_3 <= usr_data_7;
+                                        4'b1000 : cpu_data_3 <= usr_data_8;
+                                        4'b1001 : cpu_data_3 <= usr_data_9;
+                                        4'b1010 : cpu_data_3 <= usr_data_A;
+                                        4'b1011 : cpu_data_3 <= usr_data_B;
+                                        4'b1100 : cpu_data_3 <= usr_data_C;
+                                        4'b1101 : cpu_data_3 <= usr_data_D;
+                                        4'b1110 : cpu_data_3 <= usr_data_E;
+                                        4'b1111 : cpu_data_3 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0D;
+                                end
+
+                                // load operand B into cpu_data_4
+                                8'h0D : begin
+                                    case (cpu_data_1[3:0])
+                                        4'b0000 : cpu_data_4 <= usr_data_0;
+                                        4'b0001 : cpu_data_4 <= usr_data_1;
+                                        4'b0010 : cpu_data_4 <= usr_data_2;
+                                        4'b0011 : cpu_data_4 <= usr_data_3;
+                                        4'b0100 : cpu_data_4 <= usr_data_4;
+                                        4'b0101 : cpu_data_4 <= usr_data_5;
+                                        4'b0110 : cpu_data_4 <= usr_data_6;
+                                        4'b0111 : cpu_data_4 <= usr_data_7;
+                                        4'b1000 : cpu_data_4 <= usr_data_8;
+                                        4'b1001 : cpu_data_4 <= usr_data_9;
+                                        4'b1010 : cpu_data_4 <= usr_data_A;
+                                        4'b1011 : cpu_data_4 <= usr_data_B;
+                                        4'b1100 : cpu_data_4 <= usr_data_C;
+                                        4'b1101 : cpu_data_4 <= usr_data_D;
+                                        4'b1110 : cpu_data_4 <= usr_data_E;
+                                        4'b1111 : cpu_data_4 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0E;
+                                end
+
+                                // cpu_data_5 = cpu_data_3 - cpu_data_4
+                                8'h0E : begin
+                                    cpu_data_5 <= cpu_data_3 - cpu_data_4;
+                                    reg_statemachine_command <= 8'h0F;
+                                end
+
+                                // copy cpu_data_5 into rsel C
+                                8'h0F : begin
+                                    case (cpu_data_2[3:0])
+                                        4'b0000 : usr_data_0 <= cpu_data_5;
+                                        4'b0001 : usr_data_1 <= cpu_data_5;
+                                        4'b0010 : usr_data_2 <= cpu_data_5;
+                                        4'b0011 : usr_data_3 <= cpu_data_5;
+                                        4'b0100 : usr_data_4 <= cpu_data_5;
+                                        4'b0101 : usr_data_5 <= cpu_data_5;
+                                        4'b0110 : usr_data_6 <= cpu_data_5;
+                                        4'b0111 : usr_data_7 <= cpu_data_5;
+                                        4'b1000 : usr_data_8 <= cpu_data_5;
+                                        4'b1001 : usr_data_9 <= cpu_data_5;
+                                        4'b1010 : usr_data_A <= cpu_data_5;
+                                        4'b1011 : usr_data_B <= cpu_data_5;
+                                        4'b1100 : usr_data_C <= cpu_data_5;
+                                        4'b1101 : usr_data_D <= cpu_data_5;
+                                        4'b1110 : usr_data_E <= cpu_data_5;
+                                        4'b1111 : usr_data_F <= cpu_data_5;
+                                    endcase
+                                    reg_statemachine_command <= 8'h10;
+                                end
+
+                                // finish
+                                8'h10 : begin
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+
+                            endcase
+                        end
                         
                         
                         
                         // 0x42 and C = A and B
+                        8'h42 : begin
+                            case (reg_statemachine_command)
+                                
+                                // imcrement program counter
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+
+                                // load rsel A into cpu_data_0
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+
+                                // increment program counter
+                                8'h04 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+
+                                // load rsel B intp cpu_data_1
+                                8'h05 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_1 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h08;
+                                end
+
+                                // increment program counter
+                                8'h08 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h09;
+                                end
+
+                                // load rsel C into cpu_data_2
+                                8'h09 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h0A;
+                                end
+                                8'h0A : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h0B;
+                                end
+                                8'h0B : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_2 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h0C;
+                                end
+
+                                // load operand A into cpu_data_3
+                                8'h0C : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : cpu_data_3 <= usr_data_0;
+                                        4'b0001 : cpu_data_3 <= usr_data_1;
+                                        4'b0010 : cpu_data_3 <= usr_data_2;
+                                        4'b0011 : cpu_data_3 <= usr_data_3;
+                                        4'b0100 : cpu_data_3 <= usr_data_4;
+                                        4'b0101 : cpu_data_3 <= usr_data_5;
+                                        4'b0110 : cpu_data_3 <= usr_data_6;
+                                        4'b0111 : cpu_data_3 <= usr_data_7;
+                                        4'b1000 : cpu_data_3 <= usr_data_8;
+                                        4'b1001 : cpu_data_3 <= usr_data_9;
+                                        4'b1010 : cpu_data_3 <= usr_data_A;
+                                        4'b1011 : cpu_data_3 <= usr_data_B;
+                                        4'b1100 : cpu_data_3 <= usr_data_C;
+                                        4'b1101 : cpu_data_3 <= usr_data_D;
+                                        4'b1110 : cpu_data_3 <= usr_data_E;
+                                        4'b1111 : cpu_data_3 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0D;
+                                end
+
+                                // load operand B into cpu_data_4
+                                8'h0D : begin
+                                    case (cpu_data_1[3:0])
+                                        4'b0000 : cpu_data_4 <= usr_data_0;
+                                        4'b0001 : cpu_data_4 <= usr_data_1;
+                                        4'b0010 : cpu_data_4 <= usr_data_2;
+                                        4'b0011 : cpu_data_4 <= usr_data_3;
+                                        4'b0100 : cpu_data_4 <= usr_data_4;
+                                        4'b0101 : cpu_data_4 <= usr_data_5;
+                                        4'b0110 : cpu_data_4 <= usr_data_6;
+                                        4'b0111 : cpu_data_4 <= usr_data_7;
+                                        4'b1000 : cpu_data_4 <= usr_data_8;
+                                        4'b1001 : cpu_data_4 <= usr_data_9;
+                                        4'b1010 : cpu_data_4 <= usr_data_A;
+                                        4'b1011 : cpu_data_4 <= usr_data_B;
+                                        4'b1100 : cpu_data_4 <= usr_data_C;
+                                        4'b1101 : cpu_data_4 <= usr_data_D;
+                                        4'b1110 : cpu_data_4 <= usr_data_E;
+                                        4'b1111 : cpu_data_4 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0E;
+                                end
+
+                                // cpu_data_5 = cpu_data_3 ^ cpu_data_4
+                                8'h0E : begin
+                                    cpu_data_5 <= cpu_data_3 & cpu_data_4;
+                                    reg_statemachine_command <= 8'h0F;
+                                end
+
+                                // copy cpu_data_5 into rsel C
+                                8'h0F : begin
+                                    case (cpu_data_2[3:0])
+                                        4'b0000 : usr_data_0 <= cpu_data_5;
+                                        4'b0001 : usr_data_1 <= cpu_data_5;
+                                        4'b0010 : usr_data_2 <= cpu_data_5;
+                                        4'b0011 : usr_data_3 <= cpu_data_5;
+                                        4'b0100 : usr_data_4 <= cpu_data_5;
+                                        4'b0101 : usr_data_5 <= cpu_data_5;
+                                        4'b0110 : usr_data_6 <= cpu_data_5;
+                                        4'b0111 : usr_data_7 <= cpu_data_5;
+                                        4'b1000 : usr_data_8 <= cpu_data_5;
+                                        4'b1001 : usr_data_9 <= cpu_data_5;
+                                        4'b1010 : usr_data_A <= cpu_data_5;
+                                        4'b1011 : usr_data_B <= cpu_data_5;
+                                        4'b1100 : usr_data_C <= cpu_data_5;
+                                        4'b1101 : usr_data_D <= cpu_data_5;
+                                        4'b1110 : usr_data_E <= cpu_data_5;
+                                        4'b1111 : usr_data_F <= cpu_data_5;
+                                    endcase
+                                    reg_statemachine_command <= 8'h10;
+                                end
+
+                                // finish
+                                8'h10 : begin
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+
+                            endcase
+                        end
+
 
                         // 0x44 or C = A or B
+                        8'h44 : begin
+                            case (reg_statemachine_command)
+                                
+                                // imcrement program counter
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+
+                                // load rsel A into cpu_data_0
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+
+                                // increment program counter
+                                8'h04 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+
+                                // load rsel B intp cpu_data_1
+                                8'h05 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_1 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h08;
+                                end
+
+                                // increment program counter
+                                8'h08 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h09;
+                                end
+
+                                // load rsel C into cpu_data_2
+                                8'h09 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h0A;
+                                end
+                                8'h0A : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h0B;
+                                end
+                                8'h0B : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_2 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h0C;
+                                end
+
+                                // load operand A into cpu_data_3
+                                8'h0C : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : cpu_data_3 <= usr_data_0;
+                                        4'b0001 : cpu_data_3 <= usr_data_1;
+                                        4'b0010 : cpu_data_3 <= usr_data_2;
+                                        4'b0011 : cpu_data_3 <= usr_data_3;
+                                        4'b0100 : cpu_data_3 <= usr_data_4;
+                                        4'b0101 : cpu_data_3 <= usr_data_5;
+                                        4'b0110 : cpu_data_3 <= usr_data_6;
+                                        4'b0111 : cpu_data_3 <= usr_data_7;
+                                        4'b1000 : cpu_data_3 <= usr_data_8;
+                                        4'b1001 : cpu_data_3 <= usr_data_9;
+                                        4'b1010 : cpu_data_3 <= usr_data_A;
+                                        4'b1011 : cpu_data_3 <= usr_data_B;
+                                        4'b1100 : cpu_data_3 <= usr_data_C;
+                                        4'b1101 : cpu_data_3 <= usr_data_D;
+                                        4'b1110 : cpu_data_3 <= usr_data_E;
+                                        4'b1111 : cpu_data_3 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0D;
+                                end
+
+                                // load operand B into cpu_data_4
+                                8'h0D : begin
+                                    case (cpu_data_1[3:0])
+                                        4'b0000 : cpu_data_4 <= usr_data_0;
+                                        4'b0001 : cpu_data_4 <= usr_data_1;
+                                        4'b0010 : cpu_data_4 <= usr_data_2;
+                                        4'b0011 : cpu_data_4 <= usr_data_3;
+                                        4'b0100 : cpu_data_4 <= usr_data_4;
+                                        4'b0101 : cpu_data_4 <= usr_data_5;
+                                        4'b0110 : cpu_data_4 <= usr_data_6;
+                                        4'b0111 : cpu_data_4 <= usr_data_7;
+                                        4'b1000 : cpu_data_4 <= usr_data_8;
+                                        4'b1001 : cpu_data_4 <= usr_data_9;
+                                        4'b1010 : cpu_data_4 <= usr_data_A;
+                                        4'b1011 : cpu_data_4 <= usr_data_B;
+                                        4'b1100 : cpu_data_4 <= usr_data_C;
+                                        4'b1101 : cpu_data_4 <= usr_data_D;
+                                        4'b1110 : cpu_data_4 <= usr_data_E;
+                                        4'b1111 : cpu_data_4 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0E;
+                                end
+
+                                // cpu_data_5 = cpu_data_3 | cpu_data_4
+                                8'h0E : begin
+                                    cpu_data_5 <= cpu_data_3 | cpu_data_4;
+                                    reg_statemachine_command <= 8'h0F;
+                                end
+
+                                // copy cpu_data_5 into rsel C
+                                8'h0F : begin
+                                    case (cpu_data_2[3:0])
+                                        4'b0000 : usr_data_0 <= cpu_data_5;
+                                        4'b0001 : usr_data_1 <= cpu_data_5;
+                                        4'b0010 : usr_data_2 <= cpu_data_5;
+                                        4'b0011 : usr_data_3 <= cpu_data_5;
+                                        4'b0100 : usr_data_4 <= cpu_data_5;
+                                        4'b0101 : usr_data_5 <= cpu_data_5;
+                                        4'b0110 : usr_data_6 <= cpu_data_5;
+                                        4'b0111 : usr_data_7 <= cpu_data_5;
+                                        4'b1000 : usr_data_8 <= cpu_data_5;
+                                        4'b1001 : usr_data_9 <= cpu_data_5;
+                                        4'b1010 : usr_data_A <= cpu_data_5;
+                                        4'b1011 : usr_data_B <= cpu_data_5;
+                                        4'b1100 : usr_data_C <= cpu_data_5;
+                                        4'b1101 : usr_data_D <= cpu_data_5;
+                                        4'b1110 : usr_data_E <= cpu_data_5;
+                                        4'b1111 : usr_data_F <= cpu_data_5;
+                                    endcase
+                                    reg_statemachine_command <= 8'h10;
+                                end
+
+                                // finish
+                                8'h10 : begin
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+
+                            endcase
+                        end
+
+
 
                         // 0x46 not B = not A
+                        8'h46 : begin
+                            case (reg_statemachine_command)
+                                
+                                // imcrement program counter
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+
+                                // load rsel A into cpu_data_0
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+
+                                // increment program counter
+                                8'h04 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+
+                                // load rsel B intp cpu_data_1
+                                8'h05 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_1 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h0C;
+                                end
+
+                                
+
+                                // load operand A into cpu_data_3
+                                8'h0C : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : cpu_data_3 <= usr_data_0;
+                                        4'b0001 : cpu_data_3 <= usr_data_1;
+                                        4'b0010 : cpu_data_3 <= usr_data_2;
+                                        4'b0011 : cpu_data_3 <= usr_data_3;
+                                        4'b0100 : cpu_data_3 <= usr_data_4;
+                                        4'b0101 : cpu_data_3 <= usr_data_5;
+                                        4'b0110 : cpu_data_3 <= usr_data_6;
+                                        4'b0111 : cpu_data_3 <= usr_data_7;
+                                        4'b1000 : cpu_data_3 <= usr_data_8;
+                                        4'b1001 : cpu_data_3 <= usr_data_9;
+                                        4'b1010 : cpu_data_3 <= usr_data_A;
+                                        4'b1011 : cpu_data_3 <= usr_data_B;
+                                        4'b1100 : cpu_data_3 <= usr_data_C;
+                                        4'b1101 : cpu_data_3 <= usr_data_D;
+                                        4'b1110 : cpu_data_3 <= usr_data_E;
+                                        4'b1111 : cpu_data_3 <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0E;
+                                end
+
+                                // cpu_data_5 = cpu_data_3 ^ cpu_data_4
+                                8'h0E : begin
+                                    cpu_data_5 <= ~cpu_data_3;
+                                    reg_statemachine_command <= 8'h0F;
+                                end
+
+                                // copy cpu_data_5 into rsel C
+                                8'h0F : begin
+                                    case (cpu_data_1[3:0])
+                                        4'b0000 : usr_data_0 <= cpu_data_5;
+                                        4'b0001 : usr_data_1 <= cpu_data_5;
+                                        4'b0010 : usr_data_2 <= cpu_data_5;
+                                        4'b0011 : usr_data_3 <= cpu_data_5;
+                                        4'b0100 : usr_data_4 <= cpu_data_5;
+                                        4'b0101 : usr_data_5 <= cpu_data_5;
+                                        4'b0110 : usr_data_6 <= cpu_data_5;
+                                        4'b0111 : usr_data_7 <= cpu_data_5;
+                                        4'b1000 : usr_data_8 <= cpu_data_5;
+                                        4'b1001 : usr_data_9 <= cpu_data_5;
+                                        4'b1010 : usr_data_A <= cpu_data_5;
+                                        4'b1011 : usr_data_B <= cpu_data_5;
+                                        4'b1100 : usr_data_C <= cpu_data_5;
+                                        4'b1101 : usr_data_D <= cpu_data_5;
+                                        4'b1110 : usr_data_E <= cpu_data_5;
+                                        4'b1111 : usr_data_F <= cpu_data_5;
+                                    endcase
+                                    reg_statemachine_command <= 8'h10;
+                                end
+
+                                // finish
+                                8'h10 : begin
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+
+                            endcase
+                        end
+
 
                         // 0x48 xor c = A xor B
                         8'h48 : begin
@@ -3536,7 +4247,7 @@ module processor_core (
 
                                 // jump!
                                 8'h05 : begin
-                                    reg_programcounter <= reg_programcounter  cpu_address_0;
+                                    reg_programcounter <= reg_programcounter - cpu_address_0;
                                     reg_statemachine_program <= 8'hFD;
                                 end
 
