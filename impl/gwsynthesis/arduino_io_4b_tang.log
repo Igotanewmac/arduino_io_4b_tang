@@ -135,7 +135,7 @@ WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users
 WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1919)
 WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1940)
 WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":1999)
-WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":2098)
+WARN  (EX3791) : Expression size 15 truncated to fit in target size 14("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":2112)
 WARN  (EX1998) : Net 'cpu_address_2[13]' does not have a driver("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":150)
 WARN  (EX1998) : Net 'cpu_address_3[13]' does not have a driver("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":151)
 WARN  (EX1998) : Net 'cpu_address_4[13]' does not have a driver("C:\Users\james\OneDrive\verilog\blueplate\arduino_io_4b\arduino_io_4b_tang\src\processor_core.v":152)

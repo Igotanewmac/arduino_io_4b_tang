@@ -1,0 +1,356 @@
+
+
+bank select register
+
+an 8 bits wide register containing four bsel fields
+
+AABBCCDD
+
+Each two bit field is a bank selector.
+
+00 = src
+01 = key
+10 = cmd
+11 = dst
+
+
+
+register select register
+
+a 32 bit wide register containing four rsel fields.
+
+AAAAAAAABBBBBBBBCCCCCCCCDDDDDDDD
+
+OR
+
+a 16 bit wide register containing two rsel fields.
+
+AAAAAAAABBBBBBBB
+
+each rsel field is composed of two subfields.
+
+AAAABBBB
+
+The first four bits are flags:
+
+0000 = usr_data_X
+1000 = usr_wideptr_X high byte
+0100 = usr_wideptr_X low byte
+0010 = usr_address_X high byte
+0001 = usr_address_X low byte.
+
+The remaining four bits are an index value, 0-15, that select the individual register.
+
+Examples:
+
+0x0084 = A usr_data_0 , B usr_wideptr_4 (high)
+
+0x05238200 = A = usr_data_5 , B = usr_address_3 , C = usr_wideptr_2 , D = usr_data_0
+
+
+
+
+
+
+
+
+
+0x00 noop
+
+    No operation.  move to next instruction.
+
+
+
+0x01 halt
+
+    Halt processor and raise isfinished to high.
+
+
+
+
+
+0x10 load immedeate to bank select
+
+    0x10 0xAA
+
+    0xAA is copied to bank select register.
+
+
+
+
+
+
+0x11 write bank select to src 0x0000
+
+    0x11
+
+    bank select register is written to src 0x0000.
+
+
+
+
+
+0x14 fill bank A with immed
+
+    0x14 0xAA
+
+    fill bank referenced by bank select A with given value.
+
+
+
+
+0x20 load immed to register select register
+
+    0x20 0xHH 0xLL
+
+    left shift register select by 16, then put AABB into lower half.
+
+
+
+0x21 write register select register to src 0x0000
+
+    0x21
+
+    register select register is written to src 0x0000
+
+
+
+0x23 write registerbyte A to wideptr B
+
+    0x23
+
+    write the value contained in registerbyte A to the memory location contained in wideptr B
+
+
+
+0x24 load immed into register
+
+    0x24 0xRR 0xAA
+
+    0xRR rsel of register to write
+    0xAA the value to write
+
+    write 0xAA into the register selected by 0xRR
+
+
+
+0x30 inc reg rsel
+
+    0x30 0xRR
+
+    increment the register
+
+
+0x34 dec reg rsel
+
+    0x34 0xRR
+
+    decrement the register
+
+
+
+0x48 C = A xor B
+
+    0x48 0xR0 0xR1 0xR2
+
+
+
+
+
+0x50 jmp
+
+    0x02 = jmp immed
+
+    0x50 0x02 0xHH 0xLL
+    HH = high byte of address to jump to.
+    LL = low byte of address to jump to.
+
+
+
+    0x03 = jmp rsel
+    
+    0x50 0x03 0xRR
+    0xRR rsel of register containing address to jump to.
+
+
+
+    0x08 = jmpz immed
+
+    0x50 0x08 0xRR 0xHH 0xLL
+    0xRR = rsel of register to test.
+    HH = high byte of address to jump to.
+    LL = low byte of address to jump to.
+
+
+
+    0x0C = jmpz rsel
+
+    0x50 0x0X 0xR0 0xR1
+    0xR0 = register to test.
+    0xR1 = register containing address to jump to.
+
+
+
+    0x20 = jmpnz immed
+
+    0x50 0x20 0xRR 0xHH 0xLL
+    0xRR = register to test.
+    0xHH = high byte of address to jump to.
+    0xLL = low byte of address to jump to.
+
+
+
+    0x30 = jmpnz rsel
+
+    0x50 0x30 0xR0 0xR1
+    0xR0 = register to test.
+    0xR1 = register containing address to jump to.
+
+
+
+
+
+0x52 jmp fwd rel
+
+    0x02 = jmp immed
+
+    0x50 0x02 0xHH 0xLL
+    HH = high byte of address offset to jump to.
+    LL = low byte of address offset to jump to.
+
+
+
+    0x03 = jmp rsel
+    
+    0x50 0x03 0xRR
+    0xRR rsel of register containing address offset to jump to.
+
+
+
+    0x08 = jmpz immed
+
+    0x50 0x08 0xRR 0xHH 0xLL
+    0xRR = rsel of register to test.
+    HH = high byte of address offset to jump to.
+    LL = low byte of address offset to jump to.
+
+
+
+    0x0C = jmpz rsel
+
+    0x50 0x0X 0xR0 0xR1
+    0xR0 = register to test.
+    0xR1 = register containing address offset to jump to.
+
+
+
+    0x20 = jmpnz immed
+
+    0x50 0x20 0xRR 0xHH 0xLL
+    0xRR = register to test.
+    0xHH = high byte of address offset to jump to.
+    0xLL = low byte of address offset to jump to.
+
+
+
+    0x30 = jmpnz rsel
+
+    0x50 0x30 0xR0 0xR1
+    0xR0 = register to test.
+    0xR1 = register containing address offset to jump to.
+
+
+
+
+
+0x54 jmp fwd rel
+
+    0x02 = jmp immed
+
+    0x50 0x02 0xHH 0xLL
+    HH = high byte of address offset to jump to.
+    LL = low byte of address offset to jump to.
+
+
+
+    0x03 = jmp rsel
+    
+    0x50 0x03 0xRR
+    0xRR rsel of register containing address offset to jump to.
+
+
+
+    0x08 = jmpz immed
+
+    0x50 0x08 0xRR 0xHH 0xLL
+    0xRR = rsel of register to test.
+    HH = high byte of address offset to jump to.
+    LL = low byte of address offset to jump to.
+
+
+
+    0x0C = jmpz rsel
+
+    0x50 0x0X 0xR0 0xR1
+    0xR0 = register to test.
+    0xR1 = register containing address offset to jump to.
+
+
+
+    0x20 = jmpnz immed
+
+    0x50 0x20 0xRR 0xHH 0xLL
+    0xRR = register to test.
+    0xHH = high byte of address offset to jump to.
+    0xLL = low byte of address offset to jump to.
+
+
+
+    0x30 = jmpnz rsel
+
+    0x50 0x30 0xR0 0xR1
+    0xR0 = register to test.
+    0xR1 = register containing address offset to jump to.
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
