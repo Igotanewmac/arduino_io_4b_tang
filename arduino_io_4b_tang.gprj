@@ -8,6 +8,7 @@
         <File path="src/arduino_io.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_dpb/gowin_dpb_16k.v" type="file.verilog" enable="1"/>
         <File path="src/gowin_sp/gowin_sp_16k.v" type="file.verilog" enable="1"/>
+        <File path="src/lfsr_8.v" type="file.verilog" enable="1"/>
         <File path="src/processor_core.v" type="file.verilog" enable="1"/>
         <File path="src/top.v" type="file.verilog" enable="1"/>
         <File path="src/tangnano20k.cst" type="file.cst" enable="1"/>

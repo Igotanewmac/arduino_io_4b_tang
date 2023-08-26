@@ -19,6 +19,10 @@
   {
    "Path" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
    "Type" : "verilog"
+  },
+  {
+   "Path" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/lfsr_8.v",
+   "Type" : "verilog"
   }
  ],
  "IncludePath" : [

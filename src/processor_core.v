@@ -980,20 +980,6 @@ module processor_core (
 
 
 
-                        // math operations
-
-                        // 0x30 increment register immedeate
-
-                        // 0x34 decrement register immedeate
-
-                        // 0x38 add A to B into C
-
-                        // 0x40 sub A to B into C
-
-
-
-
-
 
 
                         // 0x30 increment register immedeate
