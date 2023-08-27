@@ -132,6 +132,11 @@ Examples:
 
     write 0xAA into the register selected by 0xRR
 
+0x26 load wideptr into register A
+
+    0x26 0xR0 0xR1
+    0xR0 index of wideptr to load from
+    0xR1 index of usr_data to write to
 
 
 0x30 inc reg rsel
@@ -148,10 +153,49 @@ Examples:
     decrement the register
 
 
+0x38 C = A + B
+
+    0x38 0xR0 0xR1 0xR2
+    0xR0 rsel of register A
+    0xR1 rsel of register B
+    0xR2 rsel of register C
+
+
+
+0x40 C = A - B
+
+    0X40 0XR0 0XR1 0XR2
+    0xR0 rsel of register A
+    0xR1 rsel of register B
+    0xR2 rsel of register C
+
+0x40 C = A & B
+
+    0X42 0XR0 0XR1 0XR2
+    0xR0 rsel of register A
+    0xR1 rsel of register B
+    0xR2 rsel of register C
+
+0x44 C = A | B
+
+    0X44 0XR0 0XR1 0XR2
+    0xR0 rsel of register A
+    0xR1 rsel of register B
+    0xR2 rsel of register C
+
+0X46 B = ~ A
+
+    0X46 0XR0 0XR1
+    0XR0 rsel of register A
+    0xR1 rsel of register B
 
 0x48 C = A xor B
 
     0x48 0xR0 0xR1 0xR2
+    0xR1 rsel of register A
+    0xR2 rsel of register B
+    0xR3 rsel of register C
+
 
 
 
@@ -321,8 +365,17 @@ Examples:
 
 
 
+0x60 -- fun commands!
 
+0x60    load register into lfsr keyspace
 
+    0x60 0xR0
+    0xR0 rsel of data register to load into lfsr keyspace
+
+0x62    load next byte of lfsr output into register.
+
+    0x60 0xR0
+    0xR0 rsel of data register to put lfsr output into
 
 
 

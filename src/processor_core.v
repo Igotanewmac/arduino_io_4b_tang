@@ -51,7 +51,14 @@ module processor_core (
     output reg mem_dst_ce,
     output reg mem_dst_wre,
     output reg mem_dst_oce,
-    output reg mem_dst_clk
+    output reg mem_dst_clk,
+
+    // lfsr
+    output reg lfsr_clock,
+    output reg [7:0] lfsr_keyin,
+    output reg lfsr_keyinclock,
+    input wire [7:0] lfsr_keyout,
+    output reg lfsr_keyoutclock
     
 );
 
@@ -796,7 +803,6 @@ module processor_core (
                         end
                         
 
-
                         // 0x24 load immedeate into register
                         8'h24 : begin
                             case (reg_statemachine_command)
@@ -976,8 +982,184 @@ module processor_core (
 
                             endcase
 
-                        end 
+                        end
 
+
+                        // 0x26 load wideptr A to data register B
+                        8'h26 : begin
+                            case (reg_statemachine_command)
+
+                                8'h00 : begin
+                                    reg_statemachine_command <= 8'h01;
+                                end
+                                
+                                // load rsel A into cpu_data_0
+                                8'h01 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+                                8'h04 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+                                
+
+                                // load rsel B into cpu_data_1
+                                8'h05 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                8'h06 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                8'h07 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h08;
+                                end
+                                8'h08 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    cpu_data_1 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h09;
+                                end
+                                
+                                
+                                // copy wideptr into cpu_wideptr_0
+                                8'h09 : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : cpu_wideptr_0 <= usr_wideptr_0;
+                                        4'b0001 : cpu_wideptr_0 <= usr_wideptr_1;
+                                        4'b0010 : cpu_wideptr_0 <= usr_wideptr_2;
+                                        4'b0011 : cpu_wideptr_0 <= usr_wideptr_3;
+                                        4'b0100 : cpu_wideptr_0 <= usr_wideptr_4;
+                                        4'b0101 : cpu_wideptr_0 <= usr_wideptr_5;
+                                        4'b0110 : cpu_wideptr_0 <= usr_wideptr_6;
+                                        4'b0111 : cpu_wideptr_0 <= usr_wideptr_7;
+                                        4'b1000 : cpu_wideptr_0 <= usr_wideptr_8;
+                                        4'b1001 : cpu_wideptr_0 <= usr_wideptr_9;
+                                        4'b1010 : cpu_wideptr_0 <= usr_wideptr_A;
+                                        4'b1011 : cpu_wideptr_0 <= usr_wideptr_B;
+                                        4'b1100 : cpu_wideptr_0 <= usr_wideptr_C;
+                                        4'b1101 : cpu_wideptr_0 <= usr_wideptr_D;
+                                        4'b1110 : cpu_wideptr_0 <= usr_wideptr_E;
+                                        4'b1111 : cpu_wideptr_0 <= usr_wideptr_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0A;
+                                end
+
+
+                                // prepare memory transaction
+                                8'h0A : begin
+                                    case (cpu_wideptr_0[15:14])
+                                        2'b00 : begin
+                                            mem_src_ad <= cpu_wideptr_0[13:0];
+                                            mem_src_ce <= 1'b1;
+                                            mem_src_oce <= 1'b1;
+                                        end
+                                        2'b01 : begin
+                                            mem_key_ad <= cpu_wideptr_0[13:0];
+                                            mem_key_ce <= 1'b1;
+                                            mem_key_oce <= 1'b1;
+                                        end
+                                        2'b10 : begin
+                                            mem_cmd_ad <= cpu_wideptr_0[13:0];
+                                            mem_cmd_ce <= 1'b1;
+                                            mem_cmd_oce <= 1'b1;
+                                        end
+                                        2'b11 : begin
+                                            mem_dst_ad <= cpu_wideptr_0[13:0];
+                                            mem_dst_ce <= 1'b1;
+                                            mem_dst_oce <= 1'b1;
+                                        end
+                                    endcase
+                                    reg_statemachine_command <= 8'h0B;
+                                end
+                                
+
+                                // clock up
+                                8'h0B : begin
+                                    case (cpu_wideptr_0[15:14])
+                                        2'b00 : mem_src_clk <= 1'b1;
+                                        2'b01 : mem_key_clk <= 1'b1;
+                                        2'b10 : mem_cmd_clk <= 1'b1;
+                                        2'b11 : mem_dst_clk <= 1'b1;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0C;
+                                end
+                                
+
+                                // clock down
+                                8'h0C : begin
+                                    mem_src_clk <= 1'b1;
+                                    mem_key_clk <= 1'b1;
+                                    mem_cmd_clk <= 1'b0;
+                                    mem_dst_clk <= 1'b0;
+                                    case (cpu_wideptr_0[15:14])
+                                        2'b00 : cpu_data_2 <= mem_src_dout;
+                                        2'b01 : cpu_data_2 <= mem_key_dout;
+                                        2'b10 : cpu_data_2 <= mem_cmd_dout;
+                                        2'b11 : cpu_data_2 <= mem_dst_dout;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0D;
+                                end
+                                
+                                // copy data to user register
+                                8'h0D : begin
+                                    case (cpu_data_1[3:0])
+                                        4'b0000 : usr_data_0 <= cpu_data_2;
+                                        4'b0001 : usr_data_1 <= cpu_data_2;
+                                        4'b0010 : usr_data_2 <= cpu_data_2;
+                                        4'b0011 : usr_data_3 <= cpu_data_2;
+                                        4'b0100 : usr_data_4 <= cpu_data_2;
+                                        4'b0101 : usr_data_5 <= cpu_data_2;
+                                        4'b0110 : usr_data_6 <= cpu_data_2;
+                                        4'b0111 : usr_data_7 <= cpu_data_2;
+                                        4'b1000 : usr_data_8 <= cpu_data_2;
+                                        4'b1001 : usr_data_9 <= cpu_data_2;
+                                        4'b1010 : usr_data_A <= cpu_data_2;
+                                        4'b1011 : usr_data_B <= cpu_data_2;
+                                        4'b1100 : usr_data_C <= cpu_data_2;
+                                        4'b1101 : usr_data_D <= cpu_data_2;
+                                        4'b1110 : usr_data_E <= cpu_data_2;
+                                        4'b1111 : usr_data_F <= cpu_data_2;
+                                    endcase
+                                    reg_statemachine_command <= 8'h0E;
+                                end
+
+
+                                // finish up
+                                8'h0E : begin
+                                    mem_src_ce <= 1'b0;
+                                    mem_src_oce <= 1'b0;
+                                    mem_key_ce <= 1'b0;
+                                    mem_key_oce <= 1'b0;
+                                    mem_cmd_ce <= 1'b0;
+                                    mem_cmd_oce <= 1'b0;
+                                    mem_dst_ce <= 1'b0;
+                                    mem_dst_oce <= 1'b0;
+                                    
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+                                
+
+
+                            endcase
+                        end
+
+                        
 
 
 
@@ -2268,54 +2450,54 @@ module processor_core (
                                                 // if selected register is zero, copy cpu_addressptr_1 to cpu_addressptr_0
                                                 8'h0D : begin
                                                     case (cpu_data_1)
-                                                        8'b00000000 : if ( cpu_data_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000001 : if ( cpu_data_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000010 : if ( cpu_data_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000011 : if ( cpu_data_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000100 : if ( cpu_data_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000101 : if ( cpu_data_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000110 : if ( cpu_data_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000111 : if ( cpu_data_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001000 : if ( cpu_data_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001001 : if ( cpu_data_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001010 : if ( cpu_data_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001011 : if ( cpu_data_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001100 : if ( cpu_data_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001101 : if ( cpu_data_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001110 : if ( cpu_data_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001111 : if ( cpu_data_F == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000000 : if ( cpu_wideptr_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000001 : if ( cpu_wideptr_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000010 : if ( cpu_wideptr_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000011 : if ( cpu_wideptr_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000100 : if ( cpu_wideptr_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000101 : if ( cpu_wideptr_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000110 : if ( cpu_wideptr_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000111 : if ( cpu_wideptr_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001000 : if ( cpu_wideptr_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001001 : if ( cpu_wideptr_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001010 : if ( cpu_wideptr_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001011 : if ( cpu_wideptr_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001100 : if ( cpu_wideptr_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001101 : if ( cpu_wideptr_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001110 : if ( cpu_wideptr_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001111 : if ( cpu_wideptr_F == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100000 : if ( cpu_address_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100001 : if ( cpu_address_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100010 : if ( cpu_address_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100011 : if ( cpu_address_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100100 : if ( cpu_address_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100101 : if ( cpu_address_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100110 : if ( cpu_address_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100111 : if ( cpu_address_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101000 : if ( cpu_address_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101001 : if ( cpu_address_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101010 : if ( cpu_address_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101011 : if ( cpu_address_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101100 : if ( cpu_address_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101101 : if ( cpu_address_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101110 : if ( cpu_address_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101111 : if ( cpu_address_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000000 : if ( usr_data_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000001 : if ( usr_data_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000010 : if ( usr_data_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000011 : if ( usr_data_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000100 : if ( usr_data_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000101 : if ( usr_data_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000110 : if ( usr_data_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000111 : if ( usr_data_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001000 : if ( usr_data_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001001 : if ( usr_data_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001010 : if ( usr_data_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001011 : if ( usr_data_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001100 : if ( usr_data_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001101 : if ( usr_data_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001110 : if ( usr_data_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001111 : if ( usr_data_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000000 : if ( usr_wideptr_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000001 : if ( usr_wideptr_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000010 : if ( usr_wideptr_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000011 : if ( usr_wideptr_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000100 : if ( usr_wideptr_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000101 : if ( usr_wideptr_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000110 : if ( usr_wideptr_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000111 : if ( usr_wideptr_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001000 : if ( usr_wideptr_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001001 : if ( usr_wideptr_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001010 : if ( usr_wideptr_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001011 : if ( usr_wideptr_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001100 : if ( usr_wideptr_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001101 : if ( usr_wideptr_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001110 : if ( usr_wideptr_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001111 : if ( usr_wideptr_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100000 : if ( usr_address_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100001 : if ( usr_address_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100010 : if ( usr_address_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100011 : if ( usr_address_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100100 : if ( usr_address_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100101 : if ( usr_address_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100110 : if ( usr_address_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100111 : if ( usr_address_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101000 : if ( usr_address_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101001 : if ( usr_address_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101010 : if ( usr_address_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101011 : if ( usr_address_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101100 : if ( usr_address_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101101 : if ( usr_address_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101110 : if ( usr_address_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101111 : if ( usr_address_F == 0 ) cpu_address_0 <= cpu_address_1;
                                                     endcase
                                                     reg_statemachine_command <= 8'h05;
                                                 end
@@ -2372,38 +2554,38 @@ module processor_core (
                                                 // load addressptr[data_1] into cpu_address_1
                                                 8'h08 : begin
                                                     case (cpu_data_2)
-                                                        8'b10000000 : cpu_address_1 <= cpu_wideptr_0[13:0];
-                                                        8'b10000001 : cpu_address_1 <= cpu_wideptr_1[13:0];
-                                                        8'b10000010 : cpu_address_1 <= cpu_wideptr_2[13:0];
-                                                        8'b10000011 : cpu_address_1 <= cpu_wideptr_3[13:0];
-                                                        8'b10000100 : cpu_address_1 <= cpu_wideptr_4[13:0];
-                                                        8'b10000101 : cpu_address_1 <= cpu_wideptr_5[13:0];
-                                                        8'b10000110 : cpu_address_1 <= cpu_wideptr_6[13:0];
-                                                        8'b10000111 : cpu_address_1 <= cpu_wideptr_7[13:0];
-                                                        8'b10001000 : cpu_address_1 <= cpu_wideptr_8[13:0];
-                                                        8'b10001001 : cpu_address_1 <= cpu_wideptr_9[13:0];
-                                                        8'b10001010 : cpu_address_1 <= cpu_wideptr_A[13:0];
-                                                        8'b10001011 : cpu_address_1 <= cpu_wideptr_B[13:0];
-                                                        8'b10001100 : cpu_address_1 <= cpu_wideptr_C[13:0];
-                                                        8'b10001101 : cpu_address_1 <= cpu_wideptr_D[13:0];
-                                                        8'b10001110 : cpu_address_1 <= cpu_wideptr_E[13:0];
-                                                        8'b10001111 : cpu_address_1 <= cpu_wideptr_F[13:0];
-                                                        8'b00100000 : cpu_address_1 <= cpu_address_0;
-                                                        8'b00100001 : cpu_address_1 <= cpu_address_1;
-                                                        8'b00100010 : cpu_address_1 <= cpu_address_2;
-                                                        8'b00100011 : cpu_address_1 <= cpu_address_3;
-                                                        8'b00100100 : cpu_address_1 <= cpu_address_4;
-                                                        8'b00100101 : cpu_address_1 <= cpu_address_5;
-                                                        8'b00100110 : cpu_address_1 <= cpu_address_6;
-                                                        8'b00100111 : cpu_address_1 <= cpu_address_7;
-                                                        8'b00101000 : cpu_address_1 <= cpu_address_8;
-                                                        8'b00101001 : cpu_address_1 <= cpu_address_9;
-                                                        8'b00101010 : cpu_address_1 <= cpu_address_A;
-                                                        8'b00101011 : cpu_address_1 <= cpu_address_B;
-                                                        8'b00101100 : cpu_address_1 <= cpu_address_C;
-                                                        8'b00101101 : cpu_address_1 <= cpu_address_D;
-                                                        8'b00101110 : cpu_address_1 <= cpu_address_E;
-                                                        8'b00101111 : cpu_address_1 <= cpu_address_F;
+                                                        8'b10000000 : cpu_address_1 <= usr_wideptr_0[13:0];
+                                                        8'b10000001 : cpu_address_1 <= usr_wideptr_1[13:0];
+                                                        8'b10000010 : cpu_address_1 <= usr_wideptr_2[13:0];
+                                                        8'b10000011 : cpu_address_1 <= usr_wideptr_3[13:0];
+                                                        8'b10000100 : cpu_address_1 <= usr_wideptr_4[13:0];
+                                                        8'b10000101 : cpu_address_1 <= usr_wideptr_5[13:0];
+                                                        8'b10000110 : cpu_address_1 <= usr_wideptr_6[13:0];
+                                                        8'b10000111 : cpu_address_1 <= usr_wideptr_7[13:0];
+                                                        8'b10001000 : cpu_address_1 <= usr_wideptr_8[13:0];
+                                                        8'b10001001 : cpu_address_1 <= usr_wideptr_9[13:0];
+                                                        8'b10001010 : cpu_address_1 <= usr_wideptr_A[13:0];
+                                                        8'b10001011 : cpu_address_1 <= usr_wideptr_B[13:0];
+                                                        8'b10001100 : cpu_address_1 <= usr_wideptr_C[13:0];
+                                                        8'b10001101 : cpu_address_1 <= usr_wideptr_D[13:0];
+                                                        8'b10001110 : cpu_address_1 <= usr_wideptr_E[13:0];
+                                                        8'b10001111 : cpu_address_1 <= usr_wideptr_F[13:0];
+                                                        8'b00100000 : cpu_address_1 <= usr_address_0;
+                                                        8'b00100001 : cpu_address_1 <= usr_address_1;
+                                                        8'b00100010 : cpu_address_1 <= usr_address_2;
+                                                        8'b00100011 : cpu_address_1 <= usr_address_3;
+                                                        8'b00100100 : cpu_address_1 <= usr_address_4;
+                                                        8'b00100101 : cpu_address_1 <= usr_address_5;
+                                                        8'b00100110 : cpu_address_1 <= usr_address_6;
+                                                        8'b00100111 : cpu_address_1 <= usr_address_7;
+                                                        8'b00101000 : cpu_address_1 <= usr_address_8;
+                                                        8'b00101001 : cpu_address_1 <= usr_address_9;
+                                                        8'b00101010 : cpu_address_1 <= usr_address_A;
+                                                        8'b00101011 : cpu_address_1 <= usr_address_B;
+                                                        8'b00101100 : cpu_address_1 <= usr_address_C;
+                                                        8'b00101101 : cpu_address_1 <= usr_address_D;
+                                                        8'b00101110 : cpu_address_1 <= usr_address_E;
+                                                        8'b00101111 : cpu_address_1 <= usr_address_F;
                                                         
                                                     endcase
                                                     reg_statemachine_opcode_jmp <= 8'h09;
@@ -2479,7 +2661,7 @@ module processor_core (
                                         // jmpnz immed
                                         8'b00100000 : begin
                                             case (reg_statemachine_opcode_jmp)
-                                                // load register select into cpu_data_0
+                                                // load register select into cpu_data_1
                                                 8'h00 : begin
                                                     reg_programcounter <= reg_programcounter + 1;
                                                     reg_statemachine_opcode_jmp <= 8'h01;
@@ -2551,54 +2733,54 @@ module processor_core (
                                                 // if selected register is zero, copy cpu_addressptr_1 to cpu_addressptr_0
                                                 8'h0D : begin
                                                     case (cpu_data_1)
-                                                        8'b00000000 : if ( cpu_data_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000001 : if ( cpu_data_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000010 : if ( cpu_data_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000011 : if ( cpu_data_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000100 : if ( cpu_data_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000101 : if ( cpu_data_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000110 : if ( cpu_data_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000111 : if ( cpu_data_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001000 : if ( cpu_data_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001001 : if ( cpu_data_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001010 : if ( cpu_data_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001011 : if ( cpu_data_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001100 : if ( cpu_data_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001101 : if ( cpu_data_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001110 : if ( cpu_data_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001111 : if ( cpu_data_F != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000000 : if ( cpu_wideptr_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000001 : if ( cpu_wideptr_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000010 : if ( cpu_wideptr_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000011 : if ( cpu_wideptr_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000100 : if ( cpu_wideptr_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000101 : if ( cpu_wideptr_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000110 : if ( cpu_wideptr_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000111 : if ( cpu_wideptr_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001000 : if ( cpu_wideptr_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001001 : if ( cpu_wideptr_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001010 : if ( cpu_wideptr_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001011 : if ( cpu_wideptr_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001100 : if ( cpu_wideptr_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001101 : if ( cpu_wideptr_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001110 : if ( cpu_wideptr_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001111 : if ( cpu_wideptr_F != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100000 : if ( cpu_address_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100001 : if ( cpu_address_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100010 : if ( cpu_address_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100011 : if ( cpu_address_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100100 : if ( cpu_address_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100101 : if ( cpu_address_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100110 : if ( cpu_address_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100111 : if ( cpu_address_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101000 : if ( cpu_address_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101001 : if ( cpu_address_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101010 : if ( cpu_address_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101011 : if ( cpu_address_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101100 : if ( cpu_address_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101101 : if ( cpu_address_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101110 : if ( cpu_address_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101111 : if ( cpu_address_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000000 : if ( usr_data_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000001 : if ( usr_data_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000010 : if ( usr_data_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000011 : if ( usr_data_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000100 : if ( usr_data_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000101 : if ( usr_data_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000110 : if ( usr_data_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000111 : if ( usr_data_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001000 : if ( usr_data_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001001 : if ( usr_data_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001010 : if ( usr_data_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001011 : if ( usr_data_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001100 : if ( usr_data_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001101 : if ( usr_data_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001110 : if ( usr_data_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001111 : if ( usr_data_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000000 : if ( usr_wideptr_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000001 : if ( usr_wideptr_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000010 : if ( usr_wideptr_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000011 : if ( usr_wideptr_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000100 : if ( usr_wideptr_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000101 : if ( usr_wideptr_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000110 : if ( usr_wideptr_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000111 : if ( usr_wideptr_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001000 : if ( usr_wideptr_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001001 : if ( usr_wideptr_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001010 : if ( usr_wideptr_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001011 : if ( usr_wideptr_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001100 : if ( usr_wideptr_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001101 : if ( usr_wideptr_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001110 : if ( usr_wideptr_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001111 : if ( usr_wideptr_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100000 : if ( usr_address_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100001 : if ( usr_address_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100010 : if ( usr_address_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100011 : if ( usr_address_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100100 : if ( usr_address_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100101 : if ( usr_address_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100110 : if ( usr_address_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100111 : if ( usr_address_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101000 : if ( usr_address_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101001 : if ( usr_address_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101010 : if ( usr_address_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101011 : if ( usr_address_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101100 : if ( usr_address_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101101 : if ( usr_address_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101110 : if ( usr_address_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101111 : if ( usr_address_F != 0 ) cpu_address_0 <= cpu_address_1;
                                                     endcase
                                                     reg_statemachine_command <= 8'h05;
                                                 end
@@ -2654,38 +2836,38 @@ module processor_core (
                                                 // load rsel cpu_data_2 cpu_address_1
                                                 8'h08 : begin
                                                     case (cpu_data_2)
-                                                        8'b10000000 : cpu_address_1 <= cpu_wideptr_0[13:0];
-                                                        8'b10000001 : cpu_address_1 <= cpu_wideptr_1[13:0];
-                                                        8'b10000010 : cpu_address_1 <= cpu_wideptr_2[13:0];
-                                                        8'b10000011 : cpu_address_1 <= cpu_wideptr_3[13:0];
-                                                        8'b10000100 : cpu_address_1 <= cpu_wideptr_4[13:0];
-                                                        8'b10000101 : cpu_address_1 <= cpu_wideptr_5[13:0];
-                                                        8'b10000110 : cpu_address_1 <= cpu_wideptr_6[13:0];
-                                                        8'b10000111 : cpu_address_1 <= cpu_wideptr_7[13:0];
-                                                        8'b10001000 : cpu_address_1 <= cpu_wideptr_8[13:0];
-                                                        8'b10001001 : cpu_address_1 <= cpu_wideptr_9[13:0];
-                                                        8'b10001010 : cpu_address_1 <= cpu_wideptr_A[13:0];
-                                                        8'b10001011 : cpu_address_1 <= cpu_wideptr_B[13:0];
-                                                        8'b10001100 : cpu_address_1 <= cpu_wideptr_C[13:0];
-                                                        8'b10001101 : cpu_address_1 <= cpu_wideptr_D[13:0];
-                                                        8'b10001110 : cpu_address_1 <= cpu_wideptr_E[13:0];
-                                                        8'b10001111 : cpu_address_1 <= cpu_wideptr_F[13:0];
-                                                        8'b00100000 : cpu_address_1 <= cpu_address_0;
-                                                        8'b00100001 : cpu_address_1 <= cpu_address_1;
-                                                        8'b00100010 : cpu_address_1 <= cpu_address_2;
-                                                        8'b00100011 : cpu_address_1 <= cpu_address_3;
-                                                        8'b00100100 : cpu_address_1 <= cpu_address_4;
-                                                        8'b00100101 : cpu_address_1 <= cpu_address_5;
-                                                        8'b00100110 : cpu_address_1 <= cpu_address_6;
-                                                        8'b00100111 : cpu_address_1 <= cpu_address_7;
-                                                        8'b00101000 : cpu_address_1 <= cpu_address_8;
-                                                        8'b00101001 : cpu_address_1 <= cpu_address_9;
-                                                        8'b00101010 : cpu_address_1 <= cpu_address_A;
-                                                        8'b00101011 : cpu_address_1 <= cpu_address_B;
-                                                        8'b00101100 : cpu_address_1 <= cpu_address_C;
-                                                        8'b00101101 : cpu_address_1 <= cpu_address_D;
-                                                        8'b00101110 : cpu_address_1 <= cpu_address_E;
-                                                        8'b00101111 : cpu_address_1 <= cpu_address_F;
+                                                        8'b10000000 : cpu_address_1 <= usr_wideptr_0[13:0];
+                                                        8'b10000001 : cpu_address_1 <= usr_wideptr_1[13:0];
+                                                        8'b10000010 : cpu_address_1 <= usr_wideptr_2[13:0];
+                                                        8'b10000011 : cpu_address_1 <= usr_wideptr_3[13:0];
+                                                        8'b10000100 : cpu_address_1 <= usr_wideptr_4[13:0];
+                                                        8'b10000101 : cpu_address_1 <= usr_wideptr_5[13:0];
+                                                        8'b10000110 : cpu_address_1 <= usr_wideptr_6[13:0];
+                                                        8'b10000111 : cpu_address_1 <= usr_wideptr_7[13:0];
+                                                        8'b10001000 : cpu_address_1 <= usr_wideptr_8[13:0];
+                                                        8'b10001001 : cpu_address_1 <= usr_wideptr_9[13:0];
+                                                        8'b10001010 : cpu_address_1 <= usr_wideptr_A[13:0];
+                                                        8'b10001011 : cpu_address_1 <= usr_wideptr_B[13:0];
+                                                        8'b10001100 : cpu_address_1 <= usr_wideptr_C[13:0];
+                                                        8'b10001101 : cpu_address_1 <= usr_wideptr_D[13:0];
+                                                        8'b10001110 : cpu_address_1 <= usr_wideptr_E[13:0];
+                                                        8'b10001111 : cpu_address_1 <= usr_wideptr_F[13:0];
+                                                        8'b00100000 : cpu_address_1 <= usr_address_0;
+                                                        8'b00100001 : cpu_address_1 <= usr_address_1;
+                                                        8'b00100010 : cpu_address_1 <= usr_address_2;
+                                                        8'b00100011 : cpu_address_1 <= usr_address_3;
+                                                        8'b00100100 : cpu_address_1 <= usr_address_4;
+                                                        8'b00100101 : cpu_address_1 <= usr_address_5;
+                                                        8'b00100110 : cpu_address_1 <= usr_address_6;
+                                                        8'b00100111 : cpu_address_1 <= usr_address_7;
+                                                        8'b00101000 : cpu_address_1 <= usr_address_8;
+                                                        8'b00101001 : cpu_address_1 <= usr_address_9;
+                                                        8'b00101010 : cpu_address_1 <= usr_address_A;
+                                                        8'b00101011 : cpu_address_1 <= usr_address_B;
+                                                        8'b00101100 : cpu_address_1 <= usr_address_C;
+                                                        8'b00101101 : cpu_address_1 <= usr_address_D;
+                                                        8'b00101110 : cpu_address_1 <= usr_address_E;
+                                                        8'b00101111 : cpu_address_1 <= usr_address_F;
                                                         
                                                     endcase
                                                     reg_statemachine_opcode_jmp <= 8'h09;
@@ -3006,54 +3188,54 @@ module processor_core (
                                                 // if selected register is zero, copy cpu_addressptr_1 to cpu_addressptr_0
                                                 8'h0D : begin
                                                     case (cpu_data_1)
-                                                        8'b00000000 : if ( cpu_data_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000001 : if ( cpu_data_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000010 : if ( cpu_data_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000011 : if ( cpu_data_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000100 : if ( cpu_data_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000101 : if ( cpu_data_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000110 : if ( cpu_data_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000111 : if ( cpu_data_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001000 : if ( cpu_data_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001001 : if ( cpu_data_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001010 : if ( cpu_data_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001011 : if ( cpu_data_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001100 : if ( cpu_data_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001101 : if ( cpu_data_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001110 : if ( cpu_data_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001111 : if ( cpu_data_F == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000000 : if ( cpu_wideptr_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000001 : if ( cpu_wideptr_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000010 : if ( cpu_wideptr_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000011 : if ( cpu_wideptr_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000100 : if ( cpu_wideptr_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000101 : if ( cpu_wideptr_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000110 : if ( cpu_wideptr_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000111 : if ( cpu_wideptr_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001000 : if ( cpu_wideptr_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001001 : if ( cpu_wideptr_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001010 : if ( cpu_wideptr_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001011 : if ( cpu_wideptr_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001100 : if ( cpu_wideptr_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001101 : if ( cpu_wideptr_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001110 : if ( cpu_wideptr_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001111 : if ( cpu_wideptr_F == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100000 : if ( cpu_address_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100001 : if ( cpu_address_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100010 : if ( cpu_address_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100011 : if ( cpu_address_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100100 : if ( cpu_address_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100101 : if ( cpu_address_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100110 : if ( cpu_address_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100111 : if ( cpu_address_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101000 : if ( cpu_address_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101001 : if ( cpu_address_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101010 : if ( cpu_address_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101011 : if ( cpu_address_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101100 : if ( cpu_address_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101101 : if ( cpu_address_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101110 : if ( cpu_address_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101111 : if ( cpu_address_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000000 : if ( usr_data_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000001 : if ( usr_data_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000010 : if ( usr_data_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000011 : if ( usr_data_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000100 : if ( usr_data_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000101 : if ( usr_data_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000110 : if ( usr_data_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000111 : if ( usr_data_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001000 : if ( usr_data_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001001 : if ( usr_data_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001010 : if ( usr_data_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001011 : if ( usr_data_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001100 : if ( usr_data_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001101 : if ( usr_data_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001110 : if ( usr_data_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001111 : if ( usr_data_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000000 : if ( usr_wideptr_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000001 : if ( usr_wideptr_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000010 : if ( usr_wideptr_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000011 : if ( usr_wideptr_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000100 : if ( usr_wideptr_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000101 : if ( usr_wideptr_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000110 : if ( usr_wideptr_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000111 : if ( usr_wideptr_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001000 : if ( usr_wideptr_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001001 : if ( usr_wideptr_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001010 : if ( usr_wideptr_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001011 : if ( usr_wideptr_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001100 : if ( usr_wideptr_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001101 : if ( usr_wideptr_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001110 : if ( usr_wideptr_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001111 : if ( usr_wideptr_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100000 : if ( usr_address_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100001 : if ( usr_address_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100010 : if ( usr_address_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100011 : if ( usr_address_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100100 : if ( usr_address_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100101 : if ( usr_address_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100110 : if ( usr_address_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100111 : if ( usr_address_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101000 : if ( usr_address_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101001 : if ( usr_address_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101010 : if ( usr_address_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101011 : if ( usr_address_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101100 : if ( usr_address_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101101 : if ( usr_address_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101110 : if ( usr_address_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101111 : if ( usr_address_F == 0 ) cpu_address_0 <= cpu_address_1;
                                                     endcase
                                                     reg_statemachine_command <= 8'h05;
                                                 end
@@ -3110,38 +3292,38 @@ module processor_core (
                                                 // load addressptr[data_1] into cpu_address_1
                                                 8'h08 : begin
                                                     case (cpu_data_2)
-                                                        8'b10000000 : cpu_address_1 <= cpu_wideptr_0[13:0];
-                                                        8'b10000001 : cpu_address_1 <= cpu_wideptr_1[13:0];
-                                                        8'b10000010 : cpu_address_1 <= cpu_wideptr_2[13:0];
-                                                        8'b10000011 : cpu_address_1 <= cpu_wideptr_3[13:0];
-                                                        8'b10000100 : cpu_address_1 <= cpu_wideptr_4[13:0];
-                                                        8'b10000101 : cpu_address_1 <= cpu_wideptr_5[13:0];
-                                                        8'b10000110 : cpu_address_1 <= cpu_wideptr_6[13:0];
-                                                        8'b10000111 : cpu_address_1 <= cpu_wideptr_7[13:0];
-                                                        8'b10001000 : cpu_address_1 <= cpu_wideptr_8[13:0];
-                                                        8'b10001001 : cpu_address_1 <= cpu_wideptr_9[13:0];
-                                                        8'b10001010 : cpu_address_1 <= cpu_wideptr_A[13:0];
-                                                        8'b10001011 : cpu_address_1 <= cpu_wideptr_B[13:0];
-                                                        8'b10001100 : cpu_address_1 <= cpu_wideptr_C[13:0];
-                                                        8'b10001101 : cpu_address_1 <= cpu_wideptr_D[13:0];
-                                                        8'b10001110 : cpu_address_1 <= cpu_wideptr_E[13:0];
-                                                        8'b10001111 : cpu_address_1 <= cpu_wideptr_F[13:0];
-                                                        8'b00100000 : cpu_address_1 <= cpu_address_0;
-                                                        8'b00100001 : cpu_address_1 <= cpu_address_1;
-                                                        8'b00100010 : cpu_address_1 <= cpu_address_2;
-                                                        8'b00100011 : cpu_address_1 <= cpu_address_3;
-                                                        8'b00100100 : cpu_address_1 <= cpu_address_4;
-                                                        8'b00100101 : cpu_address_1 <= cpu_address_5;
-                                                        8'b00100110 : cpu_address_1 <= cpu_address_6;
-                                                        8'b00100111 : cpu_address_1 <= cpu_address_7;
-                                                        8'b00101000 : cpu_address_1 <= cpu_address_8;
-                                                        8'b00101001 : cpu_address_1 <= cpu_address_9;
-                                                        8'b00101010 : cpu_address_1 <= cpu_address_A;
-                                                        8'b00101011 : cpu_address_1 <= cpu_address_B;
-                                                        8'b00101100 : cpu_address_1 <= cpu_address_C;
-                                                        8'b00101101 : cpu_address_1 <= cpu_address_D;
-                                                        8'b00101110 : cpu_address_1 <= cpu_address_E;
-                                                        8'b00101111 : cpu_address_1 <= cpu_address_F;
+                                                        8'b10000000 : cpu_address_1 <= usr_wideptr_0[13:0];
+                                                        8'b10000001 : cpu_address_1 <= usr_wideptr_1[13:0];
+                                                        8'b10000010 : cpu_address_1 <= usr_wideptr_2[13:0];
+                                                        8'b10000011 : cpu_address_1 <= usr_wideptr_3[13:0];
+                                                        8'b10000100 : cpu_address_1 <= usr_wideptr_4[13:0];
+                                                        8'b10000101 : cpu_address_1 <= usr_wideptr_5[13:0];
+                                                        8'b10000110 : cpu_address_1 <= usr_wideptr_6[13:0];
+                                                        8'b10000111 : cpu_address_1 <= usr_wideptr_7[13:0];
+                                                        8'b10001000 : cpu_address_1 <= usr_wideptr_8[13:0];
+                                                        8'b10001001 : cpu_address_1 <= usr_wideptr_9[13:0];
+                                                        8'b10001010 : cpu_address_1 <= usr_wideptr_A[13:0];
+                                                        8'b10001011 : cpu_address_1 <= usr_wideptr_B[13:0];
+                                                        8'b10001100 : cpu_address_1 <= usr_wideptr_C[13:0];
+                                                        8'b10001101 : cpu_address_1 <= usr_wideptr_D[13:0];
+                                                        8'b10001110 : cpu_address_1 <= usr_wideptr_E[13:0];
+                                                        8'b10001111 : cpu_address_1 <= usr_wideptr_F[13:0];
+                                                        8'b00100000 : cpu_address_1 <= usr_address_0;
+                                                        8'b00100001 : cpu_address_1 <= usr_address_1;
+                                                        8'b00100010 : cpu_address_1 <= usr_address_2;
+                                                        8'b00100011 : cpu_address_1 <= usr_address_3;
+                                                        8'b00100100 : cpu_address_1 <= usr_address_4;
+                                                        8'b00100101 : cpu_address_1 <= usr_address_5;
+                                                        8'b00100110 : cpu_address_1 <= usr_address_6;
+                                                        8'b00100111 : cpu_address_1 <= usr_address_7;
+                                                        8'b00101000 : cpu_address_1 <= usr_address_8;
+                                                        8'b00101001 : cpu_address_1 <= usr_address_9;
+                                                        8'b00101010 : cpu_address_1 <= usr_address_A;
+                                                        8'b00101011 : cpu_address_1 <= usr_address_B;
+                                                        8'b00101100 : cpu_address_1 <= usr_address_C;
+                                                        8'b00101101 : cpu_address_1 <= usr_address_D;
+                                                        8'b00101110 : cpu_address_1 <= usr_address_E;
+                                                        8'b00101111 : cpu_address_1 <= usr_address_F;
                                                         
                                                     endcase
                                                     reg_statemachine_opcode_jmp <= 8'h09;
@@ -3289,54 +3471,54 @@ module processor_core (
                                                 // if selected register is zero, copy cpu_addressptr_1 to cpu_addressptr_0
                                                 8'h0D : begin
                                                     case (cpu_data_1)
-                                                        8'b00000000 : if ( cpu_data_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000001 : if ( cpu_data_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000010 : if ( cpu_data_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000011 : if ( cpu_data_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000100 : if ( cpu_data_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000101 : if ( cpu_data_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000110 : if ( cpu_data_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000111 : if ( cpu_data_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001000 : if ( cpu_data_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001001 : if ( cpu_data_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001010 : if ( cpu_data_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001011 : if ( cpu_data_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001100 : if ( cpu_data_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001101 : if ( cpu_data_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001110 : if ( cpu_data_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001111 : if ( cpu_data_F != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000000 : if ( cpu_wideptr_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000001 : if ( cpu_wideptr_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000010 : if ( cpu_wideptr_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000011 : if ( cpu_wideptr_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000100 : if ( cpu_wideptr_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000101 : if ( cpu_wideptr_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000110 : if ( cpu_wideptr_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000111 : if ( cpu_wideptr_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001000 : if ( cpu_wideptr_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001001 : if ( cpu_wideptr_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001010 : if ( cpu_wideptr_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001011 : if ( cpu_wideptr_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001100 : if ( cpu_wideptr_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001101 : if ( cpu_wideptr_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001110 : if ( cpu_wideptr_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001111 : if ( cpu_wideptr_F != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100000 : if ( cpu_address_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100001 : if ( cpu_address_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100010 : if ( cpu_address_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100011 : if ( cpu_address_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100100 : if ( cpu_address_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100101 : if ( cpu_address_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100110 : if ( cpu_address_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100111 : if ( cpu_address_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101000 : if ( cpu_address_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101001 : if ( cpu_address_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101010 : if ( cpu_address_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101011 : if ( cpu_address_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101100 : if ( cpu_address_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101101 : if ( cpu_address_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101110 : if ( cpu_address_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101111 : if ( cpu_address_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000000 : if ( usr_data_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000001 : if ( usr_data_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000010 : if ( usr_data_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000011 : if ( usr_data_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000100 : if ( usr_data_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000101 : if ( usr_data_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000110 : if ( usr_data_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000111 : if ( usr_data_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001000 : if ( usr_data_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001001 : if ( usr_data_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001010 : if ( usr_data_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001011 : if ( usr_data_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001100 : if ( usr_data_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001101 : if ( usr_data_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001110 : if ( usr_data_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001111 : if ( usr_data_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000000 : if ( usr_wideptr_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000001 : if ( usr_wideptr_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000010 : if ( usr_wideptr_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000011 : if ( usr_wideptr_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000100 : if ( usr_wideptr_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000101 : if ( usr_wideptr_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000110 : if ( usr_wideptr_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000111 : if ( usr_wideptr_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001000 : if ( usr_wideptr_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001001 : if ( usr_wideptr_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001010 : if ( usr_wideptr_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001011 : if ( usr_wideptr_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001100 : if ( usr_wideptr_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001101 : if ( usr_wideptr_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001110 : if ( usr_wideptr_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001111 : if ( usr_wideptr_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100000 : if ( usr_address_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100001 : if ( usr_address_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100010 : if ( usr_address_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100011 : if ( usr_address_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100100 : if ( usr_address_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100101 : if ( usr_address_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100110 : if ( usr_address_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100111 : if ( usr_address_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101000 : if ( usr_address_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101001 : if ( usr_address_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101010 : if ( usr_address_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101011 : if ( usr_address_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101100 : if ( usr_address_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101101 : if ( usr_address_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101110 : if ( usr_address_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101111 : if ( usr_address_F != 0 ) cpu_address_0 <= cpu_address_1;
                                                     endcase
                                                     reg_statemachine_command <= 8'h05;
                                                 end
@@ -3392,38 +3574,38 @@ module processor_core (
                                                 // load rsel cpu_data_2 cpu_address_1
                                                 8'h08 : begin
                                                     case (cpu_data_2)
-                                                        8'b10000000 : cpu_address_1 <= cpu_wideptr_0[13:0];
-                                                        8'b10000001 : cpu_address_1 <= cpu_wideptr_1[13:0];
-                                                        8'b10000010 : cpu_address_1 <= cpu_wideptr_2[13:0];
-                                                        8'b10000011 : cpu_address_1 <= cpu_wideptr_3[13:0];
-                                                        8'b10000100 : cpu_address_1 <= cpu_wideptr_4[13:0];
-                                                        8'b10000101 : cpu_address_1 <= cpu_wideptr_5[13:0];
-                                                        8'b10000110 : cpu_address_1 <= cpu_wideptr_6[13:0];
-                                                        8'b10000111 : cpu_address_1 <= cpu_wideptr_7[13:0];
-                                                        8'b10001000 : cpu_address_1 <= cpu_wideptr_8[13:0];
-                                                        8'b10001001 : cpu_address_1 <= cpu_wideptr_9[13:0];
-                                                        8'b10001010 : cpu_address_1 <= cpu_wideptr_A[13:0];
-                                                        8'b10001011 : cpu_address_1 <= cpu_wideptr_B[13:0];
-                                                        8'b10001100 : cpu_address_1 <= cpu_wideptr_C[13:0];
-                                                        8'b10001101 : cpu_address_1 <= cpu_wideptr_D[13:0];
-                                                        8'b10001110 : cpu_address_1 <= cpu_wideptr_E[13:0];
-                                                        8'b10001111 : cpu_address_1 <= cpu_wideptr_F[13:0];
-                                                        8'b00100000 : cpu_address_1 <= cpu_address_0;
-                                                        8'b00100001 : cpu_address_1 <= cpu_address_1;
-                                                        8'b00100010 : cpu_address_1 <= cpu_address_2;
-                                                        8'b00100011 : cpu_address_1 <= cpu_address_3;
-                                                        8'b00100100 : cpu_address_1 <= cpu_address_4;
-                                                        8'b00100101 : cpu_address_1 <= cpu_address_5;
-                                                        8'b00100110 : cpu_address_1 <= cpu_address_6;
-                                                        8'b00100111 : cpu_address_1 <= cpu_address_7;
-                                                        8'b00101000 : cpu_address_1 <= cpu_address_8;
-                                                        8'b00101001 : cpu_address_1 <= cpu_address_9;
-                                                        8'b00101010 : cpu_address_1 <= cpu_address_A;
-                                                        8'b00101011 : cpu_address_1 <= cpu_address_B;
-                                                        8'b00101100 : cpu_address_1 <= cpu_address_C;
-                                                        8'b00101101 : cpu_address_1 <= cpu_address_D;
-                                                        8'b00101110 : cpu_address_1 <= cpu_address_E;
-                                                        8'b00101111 : cpu_address_1 <= cpu_address_F;
+                                                        8'b10000000 : cpu_address_1 <= usr_wideptr_0[13:0];
+                                                        8'b10000001 : cpu_address_1 <= usr_wideptr_1[13:0];
+                                                        8'b10000010 : cpu_address_1 <= usr_wideptr_2[13:0];
+                                                        8'b10000011 : cpu_address_1 <= usr_wideptr_3[13:0];
+                                                        8'b10000100 : cpu_address_1 <= usr_wideptr_4[13:0];
+                                                        8'b10000101 : cpu_address_1 <= usr_wideptr_5[13:0];
+                                                        8'b10000110 : cpu_address_1 <= usr_wideptr_6[13:0];
+                                                        8'b10000111 : cpu_address_1 <= usr_wideptr_7[13:0];
+                                                        8'b10001000 : cpu_address_1 <= usr_wideptr_8[13:0];
+                                                        8'b10001001 : cpu_address_1 <= usr_wideptr_9[13:0];
+                                                        8'b10001010 : cpu_address_1 <= usr_wideptr_A[13:0];
+                                                        8'b10001011 : cpu_address_1 <= usr_wideptr_B[13:0];
+                                                        8'b10001100 : cpu_address_1 <= usr_wideptr_C[13:0];
+                                                        8'b10001101 : cpu_address_1 <= usr_wideptr_D[13:0];
+                                                        8'b10001110 : cpu_address_1 <= usr_wideptr_E[13:0];
+                                                        8'b10001111 : cpu_address_1 <= usr_wideptr_F[13:0];
+                                                        8'b00100000 : cpu_address_1 <= usr_address_0;
+                                                        8'b00100001 : cpu_address_1 <= usr_address_1;
+                                                        8'b00100010 : cpu_address_1 <= usr_address_2;
+                                                        8'b00100011 : cpu_address_1 <= usr_address_3;
+                                                        8'b00100100 : cpu_address_1 <= usr_address_4;
+                                                        8'b00100101 : cpu_address_1 <= usr_address_5;
+                                                        8'b00100110 : cpu_address_1 <= usr_address_6;
+                                                        8'b00100111 : cpu_address_1 <= usr_address_7;
+                                                        8'b00101000 : cpu_address_1 <= usr_address_8;
+                                                        8'b00101001 : cpu_address_1 <= usr_address_9;
+                                                        8'b00101010 : cpu_address_1 <= usr_address_A;
+                                                        8'b00101011 : cpu_address_1 <= usr_address_B;
+                                                        8'b00101100 : cpu_address_1 <= usr_address_C;
+                                                        8'b00101101 : cpu_address_1 <= usr_address_D;
+                                                        8'b00101110 : cpu_address_1 <= usr_address_E;
+                                                        8'b00101111 : cpu_address_1 <= usr_address_F;
                                                         
                                                     endcase
                                                     reg_statemachine_opcode_jmp <= 8'h09;
@@ -3740,54 +3922,54 @@ module processor_core (
                                                 // if selected register is zero, copy cpu_addressptr_1 to cpu_addressptr_0
                                                 8'h0D : begin
                                                     case (cpu_data_1)
-                                                        8'b00000000 : if ( cpu_data_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000001 : if ( cpu_data_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000010 : if ( cpu_data_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000011 : if ( cpu_data_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000100 : if ( cpu_data_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000101 : if ( cpu_data_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000110 : if ( cpu_data_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000111 : if ( cpu_data_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001000 : if ( cpu_data_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001001 : if ( cpu_data_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001010 : if ( cpu_data_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001011 : if ( cpu_data_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001100 : if ( cpu_data_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001101 : if ( cpu_data_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001110 : if ( cpu_data_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001111 : if ( cpu_data_F == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000000 : if ( cpu_wideptr_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000001 : if ( cpu_wideptr_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000010 : if ( cpu_wideptr_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000011 : if ( cpu_wideptr_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000100 : if ( cpu_wideptr_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000101 : if ( cpu_wideptr_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000110 : if ( cpu_wideptr_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000111 : if ( cpu_wideptr_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001000 : if ( cpu_wideptr_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001001 : if ( cpu_wideptr_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001010 : if ( cpu_wideptr_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001011 : if ( cpu_wideptr_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001100 : if ( cpu_wideptr_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001101 : if ( cpu_wideptr_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001110 : if ( cpu_wideptr_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001111 : if ( cpu_wideptr_F == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100000 : if ( cpu_address_0 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100001 : if ( cpu_address_1 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100010 : if ( cpu_address_2 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100011 : if ( cpu_address_3 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100100 : if ( cpu_address_4 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100101 : if ( cpu_address_5 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100110 : if ( cpu_address_6 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100111 : if ( cpu_address_7 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101000 : if ( cpu_address_8 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101001 : if ( cpu_address_9 == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101010 : if ( cpu_address_A == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101011 : if ( cpu_address_B == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101100 : if ( cpu_address_C == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101101 : if ( cpu_address_D == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101110 : if ( cpu_address_E == 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101111 : if ( cpu_address_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000000 : if ( usr_data_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000001 : if ( usr_data_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000010 : if ( usr_data_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000011 : if ( usr_data_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000100 : if ( usr_data_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000101 : if ( usr_data_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000110 : if ( usr_data_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000111 : if ( usr_data_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001000 : if ( usr_data_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001001 : if ( usr_data_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001010 : if ( usr_data_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001011 : if ( usr_data_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001100 : if ( usr_data_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001101 : if ( usr_data_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001110 : if ( usr_data_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001111 : if ( usr_data_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000000 : if ( usr_wideptr_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000001 : if ( usr_wideptr_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000010 : if ( usr_wideptr_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000011 : if ( usr_wideptr_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000100 : if ( usr_wideptr_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000101 : if ( usr_wideptr_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000110 : if ( usr_wideptr_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000111 : if ( usr_wideptr_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001000 : if ( usr_wideptr_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001001 : if ( usr_wideptr_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001010 : if ( usr_wideptr_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001011 : if ( usr_wideptr_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001100 : if ( usr_wideptr_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001101 : if ( usr_wideptr_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001110 : if ( usr_wideptr_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001111 : if ( usr_wideptr_F == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100000 : if ( usr_address_0 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100001 : if ( usr_address_1 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100010 : if ( usr_address_2 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100011 : if ( usr_address_3 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100100 : if ( usr_address_4 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100101 : if ( usr_address_5 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100110 : if ( usr_address_6 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100111 : if ( usr_address_7 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101000 : if ( usr_address_8 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101001 : if ( usr_address_9 == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101010 : if ( usr_address_A == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101011 : if ( usr_address_B == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101100 : if ( usr_address_C == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101101 : if ( usr_address_D == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101110 : if ( usr_address_E == 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101111 : if ( usr_address_F == 0 ) cpu_address_0 <= cpu_address_1;
                                                     endcase
                                                     reg_statemachine_command <= 8'h05;
                                                 end
@@ -3844,38 +4026,38 @@ module processor_core (
                                                 // load addressptr[data_1] into cpu_address_1
                                                 8'h08 : begin
                                                     case (cpu_data_2)
-                                                        8'b10000000 : cpu_address_1 <= cpu_wideptr_0[13:0];
-                                                        8'b10000001 : cpu_address_1 <= cpu_wideptr_1[13:0];
-                                                        8'b10000010 : cpu_address_1 <= cpu_wideptr_2[13:0];
-                                                        8'b10000011 : cpu_address_1 <= cpu_wideptr_3[13:0];
-                                                        8'b10000100 : cpu_address_1 <= cpu_wideptr_4[13:0];
-                                                        8'b10000101 : cpu_address_1 <= cpu_wideptr_5[13:0];
-                                                        8'b10000110 : cpu_address_1 <= cpu_wideptr_6[13:0];
-                                                        8'b10000111 : cpu_address_1 <= cpu_wideptr_7[13:0];
-                                                        8'b10001000 : cpu_address_1 <= cpu_wideptr_8[13:0];
-                                                        8'b10001001 : cpu_address_1 <= cpu_wideptr_9[13:0];
-                                                        8'b10001010 : cpu_address_1 <= cpu_wideptr_A[13:0];
-                                                        8'b10001011 : cpu_address_1 <= cpu_wideptr_B[13:0];
-                                                        8'b10001100 : cpu_address_1 <= cpu_wideptr_C[13:0];
-                                                        8'b10001101 : cpu_address_1 <= cpu_wideptr_D[13:0];
-                                                        8'b10001110 : cpu_address_1 <= cpu_wideptr_E[13:0];
-                                                        8'b10001111 : cpu_address_1 <= cpu_wideptr_F[13:0];
-                                                        8'b00100000 : cpu_address_1 <= cpu_address_0;
-                                                        8'b00100001 : cpu_address_1 <= cpu_address_1;
-                                                        8'b00100010 : cpu_address_1 <= cpu_address_2;
-                                                        8'b00100011 : cpu_address_1 <= cpu_address_3;
-                                                        8'b00100100 : cpu_address_1 <= cpu_address_4;
-                                                        8'b00100101 : cpu_address_1 <= cpu_address_5;
-                                                        8'b00100110 : cpu_address_1 <= cpu_address_6;
-                                                        8'b00100111 : cpu_address_1 <= cpu_address_7;
-                                                        8'b00101000 : cpu_address_1 <= cpu_address_8;
-                                                        8'b00101001 : cpu_address_1 <= cpu_address_9;
-                                                        8'b00101010 : cpu_address_1 <= cpu_address_A;
-                                                        8'b00101011 : cpu_address_1 <= cpu_address_B;
-                                                        8'b00101100 : cpu_address_1 <= cpu_address_C;
-                                                        8'b00101101 : cpu_address_1 <= cpu_address_D;
-                                                        8'b00101110 : cpu_address_1 <= cpu_address_E;
-                                                        8'b00101111 : cpu_address_1 <= cpu_address_F;
+                                                        8'b10000000 : cpu_address_1 <= usr_wideptr_0[13:0];
+                                                        8'b10000001 : cpu_address_1 <= usr_wideptr_1[13:0];
+                                                        8'b10000010 : cpu_address_1 <= usr_wideptr_2[13:0];
+                                                        8'b10000011 : cpu_address_1 <= usr_wideptr_3[13:0];
+                                                        8'b10000100 : cpu_address_1 <= usr_wideptr_4[13:0];
+                                                        8'b10000101 : cpu_address_1 <= usr_wideptr_5[13:0];
+                                                        8'b10000110 : cpu_address_1 <= usr_wideptr_6[13:0];
+                                                        8'b10000111 : cpu_address_1 <= usr_wideptr_7[13:0];
+                                                        8'b10001000 : cpu_address_1 <= usr_wideptr_8[13:0];
+                                                        8'b10001001 : cpu_address_1 <= usr_wideptr_9[13:0];
+                                                        8'b10001010 : cpu_address_1 <= usr_wideptr_A[13:0];
+                                                        8'b10001011 : cpu_address_1 <= usr_wideptr_B[13:0];
+                                                        8'b10001100 : cpu_address_1 <= usr_wideptr_C[13:0];
+                                                        8'b10001101 : cpu_address_1 <= usr_wideptr_D[13:0];
+                                                        8'b10001110 : cpu_address_1 <= usr_wideptr_E[13:0];
+                                                        8'b10001111 : cpu_address_1 <= usr_wideptr_F[13:0];
+                                                        8'b00100000 : cpu_address_1 <= usr_address_0;
+                                                        8'b00100001 : cpu_address_1 <= usr_address_1;
+                                                        8'b00100010 : cpu_address_1 <= usr_address_2;
+                                                        8'b00100011 : cpu_address_1 <= usr_address_3;
+                                                        8'b00100100 : cpu_address_1 <= usr_address_4;
+                                                        8'b00100101 : cpu_address_1 <= usr_address_5;
+                                                        8'b00100110 : cpu_address_1 <= usr_address_6;
+                                                        8'b00100111 : cpu_address_1 <= usr_address_7;
+                                                        8'b00101000 : cpu_address_1 <= usr_address_8;
+                                                        8'b00101001 : cpu_address_1 <= usr_address_9;
+                                                        8'b00101010 : cpu_address_1 <= usr_address_A;
+                                                        8'b00101011 : cpu_address_1 <= usr_address_B;
+                                                        8'b00101100 : cpu_address_1 <= usr_address_C;
+                                                        8'b00101101 : cpu_address_1 <= usr_address_D;
+                                                        8'b00101110 : cpu_address_1 <= usr_address_E;
+                                                        8'b00101111 : cpu_address_1 <= usr_address_F;
                                                         
                                                     endcase
                                                     reg_statemachine_opcode_jmp <= 8'h09;
@@ -4023,54 +4205,54 @@ module processor_core (
                                                 // if selected register is zero, copy cpu_addressptr_1 to cpu_addressptr_0
                                                 8'h0D : begin
                                                     case (cpu_data_1)
-                                                        8'b00000000 : if ( cpu_data_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000001 : if ( cpu_data_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000010 : if ( cpu_data_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000011 : if ( cpu_data_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000100 : if ( cpu_data_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000101 : if ( cpu_data_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000110 : if ( cpu_data_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00000111 : if ( cpu_data_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001000 : if ( cpu_data_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001001 : if ( cpu_data_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001010 : if ( cpu_data_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001011 : if ( cpu_data_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001100 : if ( cpu_data_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001101 : if ( cpu_data_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001110 : if ( cpu_data_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00001111 : if ( cpu_data_F != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000000 : if ( cpu_wideptr_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000001 : if ( cpu_wideptr_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000010 : if ( cpu_wideptr_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000011 : if ( cpu_wideptr_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000100 : if ( cpu_wideptr_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000101 : if ( cpu_wideptr_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000110 : if ( cpu_wideptr_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10000111 : if ( cpu_wideptr_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001000 : if ( cpu_wideptr_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001001 : if ( cpu_wideptr_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001010 : if ( cpu_wideptr_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001011 : if ( cpu_wideptr_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001100 : if ( cpu_wideptr_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001101 : if ( cpu_wideptr_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001110 : if ( cpu_wideptr_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b10001111 : if ( cpu_wideptr_F != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100000 : if ( cpu_address_0 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100001 : if ( cpu_address_1 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100010 : if ( cpu_address_2 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100011 : if ( cpu_address_3 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100100 : if ( cpu_address_4 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100101 : if ( cpu_address_5 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100110 : if ( cpu_address_6 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00100111 : if ( cpu_address_7 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101000 : if ( cpu_address_8 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101001 : if ( cpu_address_9 != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101010 : if ( cpu_address_A != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101011 : if ( cpu_address_B != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101100 : if ( cpu_address_C != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101101 : if ( cpu_address_D != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101110 : if ( cpu_address_E != 0 ) cpu_address_0 <= cpu_address_1;
-                                                        8'b00101111 : if ( cpu_address_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000000 : if ( usr_data_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000001 : if ( usr_data_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000010 : if ( usr_data_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000011 : if ( usr_data_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000100 : if ( usr_data_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000101 : if ( usr_data_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000110 : if ( usr_data_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00000111 : if ( usr_data_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001000 : if ( usr_data_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001001 : if ( usr_data_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001010 : if ( usr_data_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001011 : if ( usr_data_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001100 : if ( usr_data_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001101 : if ( usr_data_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001110 : if ( usr_data_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00001111 : if ( usr_data_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000000 : if ( usr_wideptr_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000001 : if ( usr_wideptr_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000010 : if ( usr_wideptr_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000011 : if ( usr_wideptr_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000100 : if ( usr_wideptr_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000101 : if ( usr_wideptr_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000110 : if ( usr_wideptr_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10000111 : if ( usr_wideptr_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001000 : if ( usr_wideptr_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001001 : if ( usr_wideptr_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001010 : if ( usr_wideptr_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001011 : if ( usr_wideptr_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001100 : if ( usr_wideptr_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001101 : if ( usr_wideptr_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001110 : if ( usr_wideptr_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b10001111 : if ( usr_wideptr_F != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100000 : if ( usr_address_0 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100001 : if ( usr_address_1 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100010 : if ( usr_address_2 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100011 : if ( usr_address_3 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100100 : if ( usr_address_4 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100101 : if ( usr_address_5 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100110 : if ( usr_address_6 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00100111 : if ( usr_address_7 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101000 : if ( usr_address_8 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101001 : if ( usr_address_9 != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101010 : if ( usr_address_A != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101011 : if ( usr_address_B != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101100 : if ( usr_address_C != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101101 : if ( usr_address_D != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101110 : if ( usr_address_E != 0 ) cpu_address_0 <= cpu_address_1;
+                                                        8'b00101111 : if ( usr_address_F != 0 ) cpu_address_0 <= cpu_address_1;
                                                     endcase
                                                     reg_statemachine_command <= 8'h05;
                                                 end
@@ -4126,38 +4308,38 @@ module processor_core (
                                                 // load rsel cpu_data_2 cpu_address_1
                                                 8'h08 : begin
                                                     case (cpu_data_2)
-                                                        8'b10000000 : cpu_address_1 <= cpu_wideptr_0[13:0];
-                                                        8'b10000001 : cpu_address_1 <= cpu_wideptr_1[13:0];
-                                                        8'b10000010 : cpu_address_1 <= cpu_wideptr_2[13:0];
-                                                        8'b10000011 : cpu_address_1 <= cpu_wideptr_3[13:0];
-                                                        8'b10000100 : cpu_address_1 <= cpu_wideptr_4[13:0];
-                                                        8'b10000101 : cpu_address_1 <= cpu_wideptr_5[13:0];
-                                                        8'b10000110 : cpu_address_1 <= cpu_wideptr_6[13:0];
-                                                        8'b10000111 : cpu_address_1 <= cpu_wideptr_7[13:0];
-                                                        8'b10001000 : cpu_address_1 <= cpu_wideptr_8[13:0];
-                                                        8'b10001001 : cpu_address_1 <= cpu_wideptr_9[13:0];
-                                                        8'b10001010 : cpu_address_1 <= cpu_wideptr_A[13:0];
-                                                        8'b10001011 : cpu_address_1 <= cpu_wideptr_B[13:0];
-                                                        8'b10001100 : cpu_address_1 <= cpu_wideptr_C[13:0];
-                                                        8'b10001101 : cpu_address_1 <= cpu_wideptr_D[13:0];
-                                                        8'b10001110 : cpu_address_1 <= cpu_wideptr_E[13:0];
-                                                        8'b10001111 : cpu_address_1 <= cpu_wideptr_F[13:0];
-                                                        8'b00100000 : cpu_address_1 <= cpu_address_0;
-                                                        8'b00100001 : cpu_address_1 <= cpu_address_1;
-                                                        8'b00100010 : cpu_address_1 <= cpu_address_2;
-                                                        8'b00100011 : cpu_address_1 <= cpu_address_3;
-                                                        8'b00100100 : cpu_address_1 <= cpu_address_4;
-                                                        8'b00100101 : cpu_address_1 <= cpu_address_5;
-                                                        8'b00100110 : cpu_address_1 <= cpu_address_6;
-                                                        8'b00100111 : cpu_address_1 <= cpu_address_7;
-                                                        8'b00101000 : cpu_address_1 <= cpu_address_8;
-                                                        8'b00101001 : cpu_address_1 <= cpu_address_9;
-                                                        8'b00101010 : cpu_address_1 <= cpu_address_A;
-                                                        8'b00101011 : cpu_address_1 <= cpu_address_B;
-                                                        8'b00101100 : cpu_address_1 <= cpu_address_C;
-                                                        8'b00101101 : cpu_address_1 <= cpu_address_D;
-                                                        8'b00101110 : cpu_address_1 <= cpu_address_E;
-                                                        8'b00101111 : cpu_address_1 <= cpu_address_F;
+                                                        8'b10000000 : cpu_address_1 <= usr_wideptr_0[13:0];
+                                                        8'b10000001 : cpu_address_1 <= usr_wideptr_1[13:0];
+                                                        8'b10000010 : cpu_address_1 <= usr_wideptr_2[13:0];
+                                                        8'b10000011 : cpu_address_1 <= usr_wideptr_3[13:0];
+                                                        8'b10000100 : cpu_address_1 <= usr_wideptr_4[13:0];
+                                                        8'b10000101 : cpu_address_1 <= usr_wideptr_5[13:0];
+                                                        8'b10000110 : cpu_address_1 <= usr_wideptr_6[13:0];
+                                                        8'b10000111 : cpu_address_1 <= usr_wideptr_7[13:0];
+                                                        8'b10001000 : cpu_address_1 <= usr_wideptr_8[13:0];
+                                                        8'b10001001 : cpu_address_1 <= usr_wideptr_9[13:0];
+                                                        8'b10001010 : cpu_address_1 <= usr_wideptr_A[13:0];
+                                                        8'b10001011 : cpu_address_1 <= usr_wideptr_B[13:0];
+                                                        8'b10001100 : cpu_address_1 <= usr_wideptr_C[13:0];
+                                                        8'b10001101 : cpu_address_1 <= usr_wideptr_D[13:0];
+                                                        8'b10001110 : cpu_address_1 <= usr_wideptr_E[13:0];
+                                                        8'b10001111 : cpu_address_1 <= usr_wideptr_F[13:0];
+                                                        8'b00100000 : cpu_address_1 <= usr_address_0;
+                                                        8'b00100001 : cpu_address_1 <= usr_address_1;
+                                                        8'b00100010 : cpu_address_1 <= usr_address_2;
+                                                        8'b00100011 : cpu_address_1 <= usr_address_3;
+                                                        8'b00100100 : cpu_address_1 <= usr_address_4;
+                                                        8'b00100101 : cpu_address_1 <= usr_address_5;
+                                                        8'b00100110 : cpu_address_1 <= usr_address_6;
+                                                        8'b00100111 : cpu_address_1 <= usr_address_7;
+                                                        8'b00101000 : cpu_address_1 <= usr_address_8;
+                                                        8'b00101001 : cpu_address_1 <= usr_address_9;
+                                                        8'b00101010 : cpu_address_1 <= usr_address_A;
+                                                        8'b00101011 : cpu_address_1 <= usr_address_B;
+                                                        8'b00101100 : cpu_address_1 <= usr_address_C;
+                                                        8'b00101101 : cpu_address_1 <= usr_address_D;
+                                                        8'b00101110 : cpu_address_1 <= usr_address_E;
+                                                        8'b00101111 : cpu_address_1 <= usr_address_F;
                                                         
                                                     endcase
                                                     reg_statemachine_opcode_jmp <= 8'h09;
@@ -4239,6 +4421,168 @@ module processor_core (
 
                             endcase
                         end
+
+
+
+
+                        // lfsr goodness
+                        8'h60 : begin
+                            case (reg_statemachine_command)
+                                
+                                // load the next byte into cpu_data_0
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    mem_cmd_ce <= 1'b0;
+                                    mem_cmd_oce <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+                                
+                                // copy the right register into keyin
+                                8'h04 : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : lfsr_keyin <= usr_data_0;
+                                        4'b0001 : lfsr_keyin <= usr_data_1;
+                                        4'b0010 : lfsr_keyin <= usr_data_2;
+                                        4'b0011 : lfsr_keyin <= usr_data_3;
+                                        4'b0100 : lfsr_keyin <= usr_data_4;
+                                        4'b0101 : lfsr_keyin <= usr_data_5;
+                                        4'b0110 : lfsr_keyin <= usr_data_6;
+                                        4'b0111 : lfsr_keyin <= usr_data_7;
+                                        4'b1000 : lfsr_keyin <= usr_data_8;
+                                        4'b1001 : lfsr_keyin <= usr_data_9;
+                                        4'b1010 : lfsr_keyin <= usr_data_A;
+                                        4'b1011 : lfsr_keyin <= usr_data_B;
+                                        4'b1100 : lfsr_keyin <= usr_data_C;
+                                        4'b1101 : lfsr_keyin <= usr_data_D;
+                                        4'b1110 : lfsr_keyin <= usr_data_E;
+                                        4'b1111 : lfsr_keyin <= usr_data_F;
+                                    endcase
+                                    reg_statemachine_command <= 8'h05;
+                                end
+                                
+                                // keyin_clock high
+                                8'h05 : begin
+                                    lfsr_keyinclock <= 1'b1;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                
+                                8'h06 : begin
+                                    lfsr_clock <= 1'b1;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                
+                                // keyin_clock low
+                                8'h07 : begin
+                                    lfsr_clock <= 1'b0;
+                                    lfsr_keyinclock <= 1'b0;
+                                    reg_statemachine_command <= 8'h08;
+                                end
+                                
+                                // finish
+                                8'h08 : begin
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+                            endcase
+                        end
+
+
+                        8'h62 : begin
+                            case (reg_statemachine_command)
+                                
+                                
+                                // load rsel into cpu_data_0
+                                8'h00 : begin
+                                    reg_programcounter <= reg_programcounter + 1;
+                                    reg_statemachine_command <= 8'h01;
+                                end
+                                8'h01 : begin
+                                    mem_cmd_ad <= reg_programcounter;
+                                    mem_cmd_ce <= 1'b1;
+                                    mem_cmd_oce <= 1'b1;
+                                    reg_statemachine_command <= 8'h02;
+                                end
+                                8'h02 : begin
+                                    mem_cmd_clk <= 1'b1;
+                                    reg_statemachine_command <= 8'h03;
+                                end
+                                8'h03 : begin
+                                    mem_cmd_clk <= 1'b0;
+                                    mem_cmd_ce <= 1'b0;
+                                    mem_cmd_oce <= 1'b0;
+                                    cpu_data_0 <= mem_cmd_dout;
+                                    reg_statemachine_command <= 8'h04;
+                                end
+                                
+                                // turn on keyout clock
+                                8'h04 : begin
+                                    lfsr_keyoutclock <= 1'b1;
+                                    reg_statemachine_command <= 8'h05;
+                                end
+                                
+                                // clock high
+                                8'h05 : begin
+                                    lfsr_clock <= 1'b1;
+                                    reg_statemachine_command <= 8'h06;
+                                end
+                                
+                                // clock low
+                                8'h06 : begin
+                                    lfsr_clock <= 1'b0;
+                                    lfsr_keyoutclock <= 1'b0;
+                                    reg_statemachine_command <= 8'h07;
+                                end
+                                
+                                // copy keyout into register pointed to by cpu_data_0
+                                8'h07 : begin
+                                    case (cpu_data_0[3:0])
+                                        4'b0000 : usr_data_0 <= lfsr_keyout;
+                                        4'b0001 : usr_data_1 <= lfsr_keyout;
+                                        4'b0010 : usr_data_2 <= lfsr_keyout;
+                                        4'b0011 : usr_data_3 <= lfsr_keyout;
+                                        4'b0100 : usr_data_4 <= lfsr_keyout;
+                                        4'b0101 : usr_data_5 <= lfsr_keyout;
+                                        4'b0110 : usr_data_6 <= lfsr_keyout;
+                                        4'b0111 : usr_data_7 <= lfsr_keyout;
+                                        4'b1000 : usr_data_8 <= lfsr_keyout;
+                                        4'b1001 : usr_data_9 <= lfsr_keyout;
+                                        4'b1010 : usr_data_A <= lfsr_keyout;
+                                        4'b1011 : usr_data_B <= lfsr_keyout;
+                                        4'b1100 : usr_data_C <= lfsr_keyout;
+                                        4'b1101 : usr_data_D <= lfsr_keyout;
+                                        4'b1110 : usr_data_E <= lfsr_keyout;
+                                        4'b1111 : usr_data_F <= lfsr_keyout;
+                                    endcase
+                                    reg_statemachine_command <= 8'h08;
+                                end
+                                
+                                // finish
+                                8'h08 : begin
+                                    reg_statemachine_program <= 8'hFE;
+                                end
+                                
+
+
+
+                            endcase
+                        end
+
+
+
 
                         
 

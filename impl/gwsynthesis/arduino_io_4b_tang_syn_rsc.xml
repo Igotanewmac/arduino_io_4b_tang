@@ -5,5 +5,6 @@
     <SubModule name="blockmem_cmd" Bsram="8"/>
     <SubModule name="blockmem_dst" Bsram="8"/>
     <SubModule name="myarduino_io" Register="139" Lut="75"/>
-    <SubModule name="myprocessorcore" Register="862" Alu="44" Lut="5346"/>
+    <SubModule name="mylfsr_16bit_8high" Register="135" Lut="285"/>
+    <SubModule name="myprocessorcore" Register="879" Alu="44" Lut="6780"/>
 </Module>

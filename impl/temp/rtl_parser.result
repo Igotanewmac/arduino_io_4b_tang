@@ -57,7 +57,15 @@
    },
    {
     "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
-    "InstLine" : 223,
+    "InstLine" : 231,
+    "InstName" : "mylfsr_16bit_8high",
+    "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/lfsr_8.v",
+    "ModuleLine" : 8,
+    "ModuleName" : "lfsr_16bit_8high"
+   },
+   {
+    "InstFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/top.v",
+    "InstLine" : 244,
     "InstName" : "myprocessorcore",
     "ModuleFile" : "C:/Users/james/OneDrive/verilog/blueplate/arduino_io_4b/arduino_io_4b_tang/src/processor_core.v",
     "ModuleLine" : 13,

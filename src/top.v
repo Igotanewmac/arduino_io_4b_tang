@@ -220,6 +220,27 @@ module top (
     );
 
 
+
+    // lfsr package
+    wire wire_lfsr_clock;
+    wire [7:0] wire_lfsr_keyin;
+    wire wire_lfsr_keyinclock;
+    wire [7:0] wire_lfsr_keyout;
+    wire wire_lfsr_keyoutclock;
+
+    lfsr_16bit_8high mylfsr_16bit_8high(
+        .clock(wire_lfsr_clock),
+        .keyin(wire_lfsr_keyin),
+        .keyinclock(wire_lfsr_keyinclock),
+        .keyout(wire_lfsr_keyout),
+        .keyoutclock(wire_lfsr_keyoutclock)
+    );
+
+
+
+
+
+
     processor_core myprocessorcore(
         // sysclk
         .sysclk(sysclk),
@@ -258,8 +279,15 @@ module top (
         .mem_dst_ce(wire_mem_dst_ceb),
         .mem_dst_wre(wire_mem_dst_wreb),
         .mem_dst_oce(wire_mem_dst_oceb),
-        .mem_dst_clk(wire_mem_dst_clkb)
-        
+        .mem_dst_clk(wire_mem_dst_clkb),
+
+        //lfsr
+        .lfsr_clock(wire_lfsr_clock),
+        .lfsr_keyin(wire_lfsr_keyin),
+        .lfsr_keyinclock(wire_lfsr_keyinclock),
+        .lfsr_keyout(wire_lfsr_keyout),
+        .lfsr_keyoutclock(wire_lfsr_keyoutclock)
+
     );
 
 
